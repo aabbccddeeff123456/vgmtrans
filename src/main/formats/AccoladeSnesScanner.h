@@ -6,7 +6,7 @@ class AccoladeSnesScanner :
   public VGMScanner {
 public:
   AccoladeSnesScanner(void) {
-    USE_EXTENSION(L"spc");
+    USE_EXTENSION("spc");
   }
   virtual ~AccoladeSnesScanner(void) {
   }
