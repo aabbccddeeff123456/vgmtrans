@@ -40,13 +40,16 @@ enum GraphResSnesSeqEventType {
   EVENT_DEFAULT_LENGTH,
   EVENT_SLUR,
   EVENT_END,
+  EVENT_PATCH_ENV,
+  EVENT_NOP,
+  EVENT_TUNING_2,
 };
 
 class GraphResSnesSeq
     : public VGMSeq {
  public:
   GraphResSnesSeq
-      (RawFile *file, GraphResSnesVersion ver, uint32_t seqdata_offset, std::string newName = "GraphRes SNES Seq");
+      (RawFile *file, GraphResSnesVersion ver, uint32_t seqdata_offset, std::wstring newName = L"GraphRes SNES Seq");
   virtual ~GraphResSnesSeq(void);
 
   virtual bool GetHeaderInfo(void);

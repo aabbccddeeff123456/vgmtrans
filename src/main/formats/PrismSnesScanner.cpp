@@ -127,7 +127,7 @@ void PrismSnesScanner::Scan(RawFile *file, void *info) {
 
 void PrismSnesScanner::SearchForPrismSnesFromARAM(RawFile *file) {
   PrismSnesVersion version = PRISMSNES_NONE;
-  std::string name = file->tag.HasTitle() ? file->tag.title : RawFile::removeExtFromPath(file->GetFileName());
+  std::wstring name = file->tag.HasTitle() ? file->tag.title : RawFile::removeExtFromPath(file->GetFileName());
 
   // search song list
   uint32_t ofsLoadSeq;
@@ -164,6 +164,15 @@ void PrismSnesScanner::SearchForPrismSnesFromARAM(RawFile *file) {
 
   // TODO: guess song index
   int8_t songIndex = 0;
+  if (file->GetByte(0xf5) == 0) {
+    songIndex = 0;
+  }
+  else if (file->GetByte(0xf5) - 1 != 0) {
+    songIndex = file->GetByte(0xf5) - 1;
+  }
+  if (version == PRISMSNES_DO2) {
+    songIndex = file->GetByte(0xf6) - 1;
+  }
 
   uint32_t addrSeqHeaderPtr = addrSeqList + (songIndex * 2);
   uint32_t addrSeqHeader = file->GetShort(addrSeqHeaderPtr);

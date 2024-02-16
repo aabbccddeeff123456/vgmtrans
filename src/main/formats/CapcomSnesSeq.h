@@ -50,6 +50,8 @@ enum CapcomSnesSeqEventType {
   EVENT_ECHO_ONOFF,
   EVENT_RELEASE_RATE,
   EVENT_NOP,
+  EVENT_PAN_LFO,
+  EVENT_PAN_MODITY,
 };
 
 class CapcomSnesSeq
@@ -59,7 +61,7 @@ class CapcomSnesSeq
                 CapcomSnesVersion ver,
                 uint32_t seqdata_offset,
                 bool priorityInHeader,
-                std::string newName = "Capcom SNES Seq");
+                std::wstring newName = L"Capcom SNES Seq");
   virtual ~CapcomSnesSeq(void);
 
   virtual bool GetHeaderInfo(void);

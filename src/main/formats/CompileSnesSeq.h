@@ -4,6 +4,8 @@
 #include "SeqEvent.h"
 #include "CompileSnesFormat.h"
 
+#define TRACKS_MAX 8
+
 enum CompileSnesSeqEventType {
   EVENT_UNKNOWN0 =
   1, //start enum at 1 because if map[] look up fails, it returns 0, and we don't want that to get confused with a legit event
@@ -38,13 +40,15 @@ enum CompileSnesSeqEventType {
   EVENT_PERCUSSION_NOTE,
   EVENT_DURATION_DIRECT,
   EVENT_DURATION,
+  EVENT_REVERB,
+  EVENT_JUMP_TO_CHANNEL,
 };
 
 class CompileSnesSeq
     : public VGMSeq {
  public:
   CompileSnesSeq
-      (RawFile *file, CompileSnesVersion ver, uint32_t seqdataOffset, std::string newName = "Compile SNES Seq");
+      (RawFile *file, CompileSnesVersion ver, uint32_t seqdataOffset, std::wstring newName = L"Compile SNES Seq");
   virtual ~CompileSnesSeq(void);
 
   virtual bool GetHeaderInfo(void);
@@ -59,6 +63,9 @@ class CompileSnesSeq
   uint8_t STATUS_DURATION_DIRECT;
   uint8_t STATUS_DURATION_MIN;
   uint8_t STATUS_DURATION_MAX;
+
+  uint16_t trackStartAddress[TRACKS_MAX];
+  uint8_t currentChannel;
 
   static const uint8_t noteDurTable[];
 

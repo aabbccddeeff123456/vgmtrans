@@ -24,7 +24,7 @@ class FalcomSnesInstrSet:
                      uint32_t addrSampToInstrTable,
                      uint32_t spcDirAddr,
                      const std::map<uint8_t, uint16_t> &instrADSRHints,
-                     const std::string &name = "FalcomSnesInstrSet");
+                     const std::wstring &name = L"NinSnesInstrSet");
   virtual ~FalcomSnesInstrSet(void);
 
   virtual bool GetHeaderInfo();
@@ -53,7 +53,7 @@ class FalcomSnesInstr
                   uint32_t theInstrNum,
                   uint8_t srcn,
                   uint32_t spcDirAddr,
-                  const std::string &name = "FalcomSnesInstr");
+                  const std::wstring &name = L"NinSnesInstr");
   virtual ~FalcomSnesInstr(void);
 
   virtual bool LoadInstr();

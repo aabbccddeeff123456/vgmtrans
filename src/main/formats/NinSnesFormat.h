@@ -14,6 +14,7 @@ enum NinSnesVersion {
   NINSNES_UNKNOWN,            // Unknown version (only header support)
   NINSNES_EARLIER,            // Eariler version (Super Mario World, Pilotwings)
   NINSNES_STANDARD,           // Common version with voice commands $e0-fa (e.g. Yoshi Island)
+  NINSNES_STANDARD_WITH_FE3_COMMAND,  // Common version with voice commands $d6-fd
 
                               // derived formats
   NINSNES_RD1,                // Nintendo RD1 (e.g. Super Metroid, Earthbound)
@@ -24,13 +25,20 @@ enum NinSnesVersion {
   NINSNES_INTELLI_FE3,        // Fire Emblem 3
   NINSNES_INTELLI_TA,         // Tetris Attack
   NINSNES_INTELLI_FE4,        // Fire Emblem 4
+  NINSNES_INTELLI_MAIN,       // Other games used Intelligent Systems SPC Engine
   NINSNES_HUMAN,              // Human games (e.g. Clock Tower, Firemen, Septentrion)
   NINSNES_TOSE,               // TOSE games (e.g. Yoshi's Safari, Dragon Ball Z: Super Butouden 2)
   NINSNES_QUINTET_ACTR,       // ActRaiser, Soul Blazer
   NINSNES_QUINTET_ACTR2,      // ActRaiser 2
   NINSNES_QUINTET_IOG,        // Illusion of Gaia, Robotrek
   NINSNES_QUINTET_TS,         // Terranigma (Tenchi Souzou)
-  NINSNES_FALCOM_YS4,         // Ys IV
+  NINSNES_FALCOM_YS4,         // Ys IV // In fact,the engine was made by Cube.
+  NINSNES_MAKE_SOFTWARE,      // Make Software Games
+  NINSNES_PRODUCE,            // The 7th Saga
+  NINSNES_OCEAN,              // Ocean Games
+  NINSNES_STING,              // Sting Games (Different Header)
+
+  NINSNES_ANTHROX,            // Anthrox Branch
 };
 
 BEGIN_FORMAT(NinSnes)

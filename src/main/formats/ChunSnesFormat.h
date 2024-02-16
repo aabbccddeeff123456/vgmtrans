@@ -18,6 +18,7 @@ enum ChunSnesVersion: uint8_t {
   CHUNSNES_NONE = 0,              // Unknown Version
   CHUNSNES_SUMMER,                // Otogirisou
   CHUNSNES_WINTER,                // Dragon Quest 5 etc.
+  CHUNSNES_19950804,              // Fushigi no Dungeon 2 - Fuurai no Shiren
 };
 
 enum ChunSnesMinorVersion: uint8_t {

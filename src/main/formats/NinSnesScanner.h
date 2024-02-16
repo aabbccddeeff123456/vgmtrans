@@ -6,7 +6,7 @@ class NinSnesScanner:
     public VGMScanner {
  public:
   NinSnesScanner(void) {
-    USE_EXTENSION("spc");
+    USE_EXTENSION(L"spc");
   }
   virtual ~NinSnesScanner(void) {
   }
@@ -18,9 +18,13 @@ class NinSnesScanner:
  private:
   static BytePattern ptnBranchForVcmd;
   static BytePattern ptnBranchForVcmdReadahead;
+  static BytePattern ptnBranchForVcmdSting;
   static BytePattern ptnJumpToVcmd;
   static BytePattern ptnJumpToVcmdSMW;
+  static BytePattern ptnJumpToVcmdSting;
+  static BytePattern ptnJumpToVcmdAnthrox;
   static BytePattern ptnReadVcmdLengthSMW;
+  static BytePattern ptnReadVcmdLengthAnthrox;
   static BytePattern ptnDispatchNoteYI;
   static BytePattern ptnIncSectionPtr;
   static BytePattern ptnLoadInstrTableAddress;
@@ -33,6 +37,8 @@ class NinSnesScanner:
   static BytePattern ptnIncSectionPtrGD3;
   static BytePattern ptnIncSectionPtrYSFR;
   static BytePattern ptnIncSectionPtrYs4;
+  static BytePattern ptnIncSectionPtrProduce;
+  static BytePattern ptnIncSectionPtrSting;
   static BytePattern ptnInitSectionPtrHE4;
   static BytePattern ptnJumpToVcmdCTOW;
   static BytePattern ptnJumpToVcmdYSFR;
@@ -58,4 +64,5 @@ class NinSnesScanner:
   static BytePattern ptnInstrVCmdACTR;
   static BytePattern ptnInstrVCmdACTR2;
   static BytePattern ptnInstrVCmdTS;
+  static BytePattern ptnIntelliVCmdFA_EARLY;
 };

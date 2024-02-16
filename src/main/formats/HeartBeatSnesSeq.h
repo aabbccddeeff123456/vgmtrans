@@ -49,6 +49,9 @@ enum HeartBeatSnesSeqEventType {
   EVENT_NOISE_OFF,
   EVENT_NOISE_FREQ,
   EVENT_SUBEVENT,
+  EVENT_NOP,
+  EVENT_PITCHMOD_ON_OFF,
+  EVENT_PITCHMOD_OFF,
 };
 
 enum HeartBeatSnesSeqSubEventType {
@@ -66,13 +69,14 @@ enum HeartBeatSnesSeqSubEventType {
   SUBEVENT_ADSR_RR,
   SUBEVENT_ADSR_SR,
   SUBEVENT_SURROUND,
+  SUBEVENT_NOP,
 };
 
 class HeartBeatSnesSeq
     : public VGMSeq {
  public:
   HeartBeatSnesSeq
-      (RawFile *file, HeartBeatSnesVersion ver, uint32_t seqdataOffset, std::string newName = "HeartBeat SNES Seq");
+      (RawFile *file, HeartBeatSnesVersion ver, uint32_t seqdataOffset, std::wstring newName = L"HeartBeat SNES Seq");
   virtual ~HeartBeatSnesSeq(void);
 
   virtual bool GetHeaderInfo(void);

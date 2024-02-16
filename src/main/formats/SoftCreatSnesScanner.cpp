@@ -52,6 +52,28 @@ BytePattern SoftCreatSnesScanner::ptnVCmdExec(
 	,
 	20);
 
+//; Plok!
+//; start song(a - 1), save song index to $e4
+//11aa: 5d        mov   x, a
+//11ab : 1d        dec   x
+//11ac : d8 e4     mov   $e4, x
+//11ae : 3f 89 05  call  $0589
+//11b1 : 8f 00 e2  mov   $e2, #$00
+//11b4: 8f 00 e3  mov   $e3, #$00
+//11b7: 8f 00 e0  mov   $e0, #$00
+//11ba: 8f 7f e1  mov   $e1, #$7f
+//11bd: 3f e8 10  call  $10e8
+//11c0 : 80        setc
+//11c1 : 6f        ret
+BytePattern SoftCreatSnesScanner::ptnDetectSongIndex(
+  "\x5d\x1d\xd8\xe4\x3f\x89\x05\x8f"
+  "\x00\xe2\x8f\x00\xe3"
+  ,
+  "xxx?x??x"
+  "??x??"
+  ,
+  13);
+
 void SoftCreatSnesScanner::Scan(RawFile *file, void *info) {
   uint32_t nFileLength = file->size();
   if (nFileLength == 0x10000) {
@@ -65,7 +87,7 @@ void SoftCreatSnesScanner::Scan(RawFile *file, void *info) {
 
 void SoftCreatSnesScanner::SearchForSoftCreatSnesFromARAM(RawFile *file) {
   SoftCreatSnesVersion version = SOFTCREATSNES_NONE;
-  std::string name = file->tag.HasTitle() ? file->tag.title : RawFile::removeExtFromPath(file->GetFileName());
+  std::wstring name = file->tag.HasTitle() ? file->tag.title : RawFile::removeExtFromPath(file->GetFileName());
 
   // search song list
   uint32_t ofsLoadSeq;
@@ -129,8 +151,16 @@ void SoftCreatSnesScanner::SearchForSoftCreatSnesFromARAM(RawFile *file) {
       break;
   }
 
+  int8_t songIndex;
+  uint32_t songIndexDetect;
+  if (file->SearchBytePattern(ptnDetectSongIndex, songIndexDetect)) {
+    songIndex = file->GetByte(file->GetByte(songIndexDetect + 3));
+  }
+  else {
+    songIndex = 1;
+  }
+
   // TODO: guess song index
-  int8_t songIndex = 1;
 
   uint32_t addrSeqHeader = addrSeqList + songIndex;
   SoftCreatSnesSeq *newSeq = new SoftCreatSnesSeq(file, version, addrSeqHeader, headerAlignSize, name);

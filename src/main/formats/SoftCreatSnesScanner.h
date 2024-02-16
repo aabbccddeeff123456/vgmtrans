@@ -6,7 +6,7 @@ class SoftCreatSnesScanner:
     public VGMScanner {
  public:
   SoftCreatSnesScanner(void) {
-    USE_EXTENSION("spc");
+    USE_EXTENSION(L"spc");
   }
   virtual ~SoftCreatSnesScanner(void) {
   }
@@ -18,4 +18,5 @@ class SoftCreatSnesScanner:
  private:
   static BytePattern ptnLoadSeq;
   static BytePattern ptnVCmdExec;
+  static BytePattern ptnDetectSongIndex;
 };

@@ -8,7 +8,8 @@ class AkaoSnesScanner:
     public VGMScanner {
  public:
   AkaoSnesScanner(void) {
-    USE_EXTENSION("spc");
+    USE_EXTENSION(L"spc");
+    USE_EXTENSION(L"snsf"); // Chrono Trigger
   }
   virtual ~AkaoSnesScanner(void) {
   }
@@ -33,4 +34,5 @@ class AkaoSnesScanner:
   static BytePattern ptnLoadInstrV2;
   static BytePattern ptnLoadInstrV3;
   static BytePattern ptnReadPercussionTableV4;
+  static BytePattern ptnReadPercussionTableV4RS3;
 };

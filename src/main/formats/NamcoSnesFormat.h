@@ -17,4 +17,5 @@ END_FORMAT()
 enum NamcoSnesVersion: uint8_t {
   NAMCOSNES_NONE = 0,              // Unknown Version
   NAMCOSNES_STANDARD,              // Wagyan Paradise etc.
+  NAMCOSNES_STANDARD_V2,           // Yuu Yuu Hakusho - Tokubetsu-hen
 };

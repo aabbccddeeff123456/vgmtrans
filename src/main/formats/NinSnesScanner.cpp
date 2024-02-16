@@ -3,6 +3,8 @@
 #include "NinSnesInstr.h"
 #include "NinSnesSeq.h"
 
+// TODO:Add support for smw's AM4,AMM,AMK format.
+
 //; Yoshi's Island SPC
 //; vcmd branches 80-ff
 //0813: 68 e0     cmp   a,#$e0
@@ -17,6 +19,16 @@ BytePattern NinSnesScanner::ptnBranchForVcmd(
 	"?"
 	,
 	9);
+
+//68 e0 90 03 5f 2b 0f 68 c9 d0 03 5f d4 0d
+BytePattern NinSnesScanner::ptnBranchForVcmdSting(
+  "\x68\xe0\x90\x03\x5f\x2b\x0f\x68"
+  "\xc9\xd0\x03\x5f\xd4\x0d"
+  ,
+  "x?xxx??x"
+  "?x?x??"
+  ,
+  14);
 
 //; Yoshi's Island SPC
 //0c91: 68 ef     cmp   a,#$ef
@@ -58,6 +70,19 @@ BytePattern NinSnesScanner::ptnJumpToVcmd(
 	"?xxxxx??"
 	,
 	16);
+
+//28 1f 1c d8 03 5d f5 42 0f c4 00 f5 43 0f c4 01
+//e4 03 cd 00 1f 00 00
+BytePattern NinSnesScanner::ptnJumpToVcmdSting(
+  "\x28\x1f\x1c\xd8\x03\x5d\xf5\x42"
+  "\x0f\xc4\x00\xf5\x43\x0f\xc4\x01"
+  "\xe4\x03\xcd\x00\x1f\x00\x00"
+  ,
+  "x?xx?xx?"
+  "?x?x??x?"
+  "x?x?x??"
+  ,
+  23);
 
 //; Super Mario World SPC
 //; dispatch vcmd in A (da-f2)
@@ -270,6 +295,43 @@ BytePattern NinSnesScanner::ptnIncSectionPtrYs4(
 	,
 	18);
 
+//; The 7th Saga SPC
+//0f4a: e7 17     mov   a, ($17 + x)
+//0f4c : bb 17     inc   $17 + x
+//0f4e : d0 02     bne   $0f52
+//0f50 : bb 18     inc   $18 + x
+//0f52 : 2d        push  a
+//0f53 : e7 17     mov   a, ($17 + x)
+//0f55 : bb 17     inc   $17 + x
+//0f57 : d0 02     bne   $0f5b
+//0f59 : bb 18     inc   $18 + x
+//0f5b : fd        mov   y, a
+//0f5c : ae        pop   a
+//0f5d : 6f        ret
+BytePattern NinSnesScanner::ptnIncSectionPtrProduce(
+  "\xe7\x17\xbb\x17\xd0\x02\xbb\x18"
+  "\x2d\xe7\x17\xbb\x17\xd0\x02\xbb"
+  "\x18\xfd\xae\x6f"
+  ,
+  "x?x?x?x?"
+  "xx?x?x?x"
+  "?xxx"
+  ,
+  20);
+
+//1c 5d f5 01 18 fd f5 00 18 da 06 e8 00 c4 1a c4
+//1b
+BytePattern NinSnesScanner::ptnIncSectionPtrSting(
+  "\x1c\x5d\xf5\x01\x18\xfd\xf5\x00"
+  "\x18\xda\x06\xe8\x00\xc4\x1a\xc4"
+  "\x1b"
+  ,
+  "xxx??xx?"
+  "?x?x?x?x"
+  "?"
+  ,
+  17);
+
 //; Heracles no Eiko 4 SPC
 //09b4: 6d        push  y
 //09b5: c4 8c     mov   $8c,a
@@ -344,6 +406,15 @@ BytePattern NinSnesScanner::ptnJumpToVcmdYSFR(
 	,
 	13);
 
+BytePattern NinSnesScanner::ptnJumpToVcmdAnthrox(
+  "\x1c\xfd\xf6\xdc\x10\x2d\xf6\xdb"
+  "\x10\x2d\x6f"
+  ,
+  "xxx??x"
+  "x??xx"
+  ,
+  11);
+
 //; Ys IV - Mask of the Sun SPC
 //0bd8: 80        setc
 //0bd9: a8 e0     sbc   a,#$e0
@@ -377,6 +448,19 @@ BytePattern NinSnesScanner::ptnReadVcmdLengthYSFR(
 	"?"
 	,
 	9);
+
+//80 a8 ca 8d 06 cf da 13 60 98 00 13 98 22 14 4d
+//f5 a8 06
+BytePattern NinSnesScanner::ptnReadVcmdLengthAnthrox(
+  "\x80\xa8\xca\x8d\x06\xcf\xda\x13"
+  "\x60\x98\x00\x13\x98\x22\x14\x4d"
+  "\xf5\xa8\x06"
+  ,
+  "xx?x?xx?"
+  "xx??x??x"
+  "x??"
+  ,
+  19);
 
 //; Ys IV - Mask of the Sun SPC
 //0cdc: 68 e0     cmp   a,#$e0
@@ -652,6 +736,18 @@ BytePattern NinSnesScanner::ptnIntelliVCmdFA(
 	,
 	23);
 
+//; Other games developed by Intelligent Systems
+BytePattern NinSnesScanner::ptnIntelliVCmdFA_EARLY(
+  "\xf4\x22\xc4\xb6\xf4\x23"
+  "\xc4\xb7\xe8\x04\xcf\x60\x94\x22"
+  "\xd4\x22\x90\x02\xbb\x23\x6f"
+  ,
+  "x?x?x?"
+  "x?x?xxx?"
+  "x?xxx?x"
+  ,
+  21);
+
 //; Gradius 3 SPC
 //; vcmd e0 - instrument
 //0a9b: d5 11 02  mov   $0211+x,a
@@ -904,8 +1000,8 @@ void NinSnesScanner::Scan(RawFile *file, void *info) {
 void NinSnesScanner::SearchForNinSnesFromARAM(RawFile *file) {
   NinSnesVersion version = NINSNES_NONE;
 
-  std::string basefilename = RawFile::removeExtFromPath(file->GetFileName());
-  std::string name = file->tag.HasTitle() ? file->tag.title : basefilename;
+  std::wstring basefilename = RawFile::removeExtFromPath(file->GetFileName());
+  std::wstring name = file->tag.HasTitle() ? file->tag.title : basefilename;
 
   // get section pointer address
   uint32_t ofsIncSectionPtr;
@@ -927,6 +1023,9 @@ void NinSnesScanner::SearchForNinSnesFromARAM(RawFile *file) {
   }
   else if (file->SearchBytePattern(ptnIncSectionPtrYs4, ofsIncSectionPtr)) {
 	  addrSectionPtr = file->GetByte(ofsIncSectionPtr + 3);
+  }
+  else if (file->SearchBytePattern(ptnIncSectionPtrProduce, ofsIncSectionPtr)) {
+    addrSectionPtr = file->GetByte(ofsIncSectionPtr + 1) + 0x10;  // Song Section Ptr at 0x29
   }
   else {
     return;
@@ -1081,6 +1180,26 @@ void NinSnesScanner::SearchForNinSnesFromARAM(RawFile *file) {
     ,
     18);
 
+  //; The 7th Saga SPC
+  //0f5e: 1c        asl   a
+  //0f5f : fd        mov   y, a
+  //0f60 : f6 00 11  mov   a, $1100 + y
+  //0f63 : d4 17     mov   $17 + x, a
+  //0f65 : f6 01 11  mov   a, $1101 + y
+  //0f68 : d4 18     mov   $18 + x, a
+  //0f6a : 6f        ret
+  char ptnInitSectionPtrBytesProduce[] =
+    "\x1c\xfd\xf6\x00\x11\xd4\x17\xf6"
+    "\x01\x11\xd4\x18\x6f";
+  ptnInitSectionPtrBytesProduce[6] = addrSectionPtr - 0x10;
+  BytePattern ptnInitSectionPtrProduce(
+    ptnInitSectionPtrBytesProduce
+    ,
+    "xxx??x?x"
+    "??x?x"
+    ,
+    13);
+
   // END DYNAMIC PATTERN DEFINITIONS
 
   // ACQUIRE SEQUENCE LIST ADDRESS:
@@ -1120,6 +1239,9 @@ void NinSnesScanner::SearchForNinSnesFromARAM(RawFile *file) {
     uint16_t addrSongListPtr = file->GetShort(ofsInitSectionPtr + 1);
     addrSongList = file->GetShort(addrSongListPtr);
   }
+  //else if (file->SearchBytePattern(ptnIncSectionPtrSting, ofsIncSectionPtr)) {
+  //  addrSongList = file->GetShort(ofsIncSectionPtr + 3);
+  //}
   else if (file->SearchBytePattern(ptnInitSectionPtrHE4, ofsInitSectionPtr)) {
     addrSongList = file->GetByte(ofsInitSectionPtr + 4) << 8;
   }
@@ -1144,6 +1266,9 @@ void NinSnesScanner::SearchForNinSnesFromARAM(RawFile *file) {
     if (file->SearchBytePattern(ptnInitSongListPtrYSFR, ofsInitSongListPtr)) {
       addrSongList = file->GetByte(ofsInitSongListPtr + 1) | (file->GetByte(ofsInitSongListPtr + 4) << 8);
     }
+  }
+  else if (file->SearchBytePattern(ptnInitSectionPtrProduce, ofsInitSectionPtr)) {
+    addrSongList = file->GetShort(ofsInitSectionPtr + 3);
   }
   else {
     return;
@@ -1199,6 +1324,10 @@ void NinSnesScanner::SearchForNinSnesFromARAM(RawFile *file) {
       firstVoiceCmd = file->GetByte(ofsBranchForVcmd + 5);
     }
     else if (file->SearchBytePattern(ptnBranchForVcmd, ofsBranchForVcmd)) {
+      // this search often finds a wrong code, but some games still need it (for example, Human games)
+      firstVoiceCmd = file->GetByte(ofsBranchForVcmd + 1);
+    }
+    else if (file->SearchBytePattern(ptnBranchForVcmdSting, ofsBranchForVcmd)) {
       // this search often finds a wrong code, but some games still need it (for example, Human games)
       firstVoiceCmd = file->GetByte(ofsBranchForVcmd + 1);
     }
@@ -1395,6 +1524,50 @@ void NinSnesScanner::SearchForNinSnesFromARAM(RawFile *file) {
                                                           sizeof(INTELLI_TA_VCMD_LEN_TABLE))) {
               version = NINSNES_INTELLI_TA;
             }
+          }
+        }
+        else if (file->SearchBytePattern(ptnIntelliVCmdFA_EARLY, ofsIntelliVCmdFA)) {
+          if (file->SearchBytePattern(ptnDispatchNoteFE3, ofsDispatchNote)) {
+            const uint8_t INTELLI_FE3_VCMD_LEN_TABLE[40] =
+            { 0x01, 0x01, 0x02, 0x03, 0x00, 0x01, 0x02, 0x01, 0x02, 0x01, 0x01, 0x03, 0x00, 0x01, 0x02, 0x03, 0x01,
+             0x03, 0x03, 0x00, 0x01, 0x03, 0x00, 0x03, 0x03, 0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01,
+             0x01, 0x00, 0x01, 0x01, 0x02, 0x02 };
+            const uint8_t INTELLI_MAIN_LATER_VCMD_LEN_TABLE[40] =
+            { 0x01, 0x01, 0x02, 0x03, 0x00, 0x01, 0x02, 0x01, 0x02, 0x01, 0x01, 0x03, 0x00, 0x01, 0x02, 0x03, 0x01,
+             0x03, 0x03, 0x00, 0x01, 0x03, 0x00, 0x03, 0x03, 0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01,
+             0x01, 0x25, 0x01, 0x01, 0x02, 0x02 };
+            if (firstVoiceCmd == 0xd6 && file->MatchBytes(INTELLI_FE3_VCMD_LEN_TABLE,
+              addrVoiceCmdLengthTable,
+              sizeof(INTELLI_FE3_VCMD_LEN_TABLE))) {
+              version = NINSNES_INTELLI_FE3;
+            }
+            else if (firstVoiceCmd == 0xd6 && file->MatchBytes(INTELLI_MAIN_LATER_VCMD_LEN_TABLE,
+              addrVoiceCmdLengthTable,
+              sizeof(INTELLI_MAIN_LATER_VCMD_LEN_TABLE))) {
+              version = NINSNES_INTELLI_FE3;
+            }
+          }
+          else {
+            const uint8_t INTELLI_FE3_VCMD_LEN_TABLE[40] =
+            { 0x01, 0x01, 0x02, 0x03, 0x00, 0x01, 0x02, 0x01, 0x02, 0x01, 0x01, 0x03, 0x00, 0x01, 0x02, 0x03, 0x01,
+             0x03, 0x03, 0x00, 0x01, 0x03, 0x00, 0x03, 0x03, 0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01,
+             0x01, 0x25, 0x01, 0x01, 0x02, 0x02 };
+            if (firstVoiceCmd == 0xd6 && file->MatchBytes(INTELLI_FE3_VCMD_LEN_TABLE,
+              addrVoiceCmdLengthTable,
+              sizeof(INTELLI_FE3_VCMD_LEN_TABLE))) {
+              version = NINSNES_STANDARD_WITH_FE3_COMMAND;
+            }
+          }
+        }
+        else {
+          const uint8_t INTELLI_ALT_VCMD_LEN_TABLE[40] =
+          { 0x01, 0x01, 0x02, 0x03, 0x00, 0x01, 0x02, 0x01, 0x02, 0x01, 0x01, 0x03, 0x00, 0x01, 0x02, 0x03, 0x01,
+           0x03, 0x03, 0x00, 0x01, 0x03, 0x00, 0x03, 0x03, 0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01,
+           0x01, 0x25, 0x01, 0x01, 0x02, 0x00 };
+          if (firstVoiceCmd == 0xd6 && file->MatchBytes(INTELLI_ALT_VCMD_LEN_TABLE,
+            addrVoiceCmdLengthTable,
+            sizeof(INTELLI_ALT_VCMD_LEN_TABLE))) {
+            version = NINSNES_STANDARD_WITH_FE3_COMMAND;
           }
         }
       }

@@ -68,13 +68,14 @@ enum SuzukiSnesSeqEventType {
   EVENT_ECHO_OFF,
   EVENT_CALL_SFX_LO,
   EVENT_CALL_SFX_HI,
+  EVENT_ADSR2,
 };
 
 class SuzukiSnesSeq
     : public VGMSeq {
  public:
   SuzukiSnesSeq
-      (RawFile *file, SuzukiSnesVersion ver, uint32_t seqdataOffset, std::string newName = "Square SUZUKI SNES Seq");
+      (RawFile *file, SuzukiSnesVersion ver, uint32_t seqdataOffset, std::wstring newName = L"Square SUZUKI SNES Seq");
   virtual ~SuzukiSnesSeq(void);
 
   virtual bool GetHeaderInfo(void);
@@ -85,6 +86,7 @@ class SuzukiSnesSeq
 
   SuzukiSnesVersion version;
   std::map<uint8_t, SuzukiSnesSeqEventType> EventMap;
+  uint16_t percussionTableAddress;
 
   static const uint8_t NOTE_DUR_TABLE[13];
 
@@ -106,6 +108,9 @@ class SuzukiSnesTrack
   uint16_t infiniteLoopPoint;
 
   uint8_t spcVolume;
+
+  bool percussion;
+  uint16_t nonPercussionProgram;
 
   uint8_t loopLevel;
   uint8_t loopCount[SUZUKISNES_LOOP_LEVEL_MAX];

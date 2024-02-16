@@ -27,12 +27,39 @@ BytePattern NamcoSnesScanner::ptnReadSongList(
 	"\xd8\x3c\xcd\xf4\xd8\x3d\x28\x1f"
 	"\x8d\x03\xcf\xfd\xf7\x3c\x1c"
 	,
-	"x?xxx?x?"
-	"x?x?xxx?"
-	"x?x?x?xx"
-	"xxxxx?x"
+	"x?x?x?x?"
+	"x?x?x?x?"
+	"x?x?x?x?"
+	"x?xxx?x"
 	,
 	31);
+
+//Yuu Yuu Hakusho - Tokubetsu-hen SPC
+//0630: e5 0e c0  mov   a, $c00e
+//0633 : ec 0f c0  mov   y, $c00f
+//0636 : da 3c     movw  $3c, ya; load song list address to $3c / d
+//0638: cd 06     mov   x, #$06
+//063a: e4 d1     mov   a, $d1
+//063c : f0 03     beq   $0641
+//063e : 3f 87 10  call  $1087
+//0641 : e4 45     mov   a, $45; song number
+//0643: d4 49     mov   $49 + x, a
+//0645 : 1c        asl   a
+//0646 : fd        mov   y, a
+//0647 : f7 3c     mov   a, ($3c)+y
+//0649 : d4 00     mov   $00 + x, a
+BytePattern NamcoSnesScanner::ptnReadSongListAlt(
+  "\xe5\x0e\xc0\xec\x0f\xc0\xda\x3c"
+  "\xcd\x06\xe4\xd1\xf0\x03\x3f\x87"
+  "\x10\xe4\x45\xd4\x49\x1c\xfd\xf7"
+  "\x3c\xd4\x00"
+  ,
+  "x??x??x?"
+  "x?x?x?x?"
+  "?x?x?xxx"
+  "?x?"
+  ,
+  27);
 
 //; Wagan Paradise SPC
 //0703: cd 00     mov   x,#$00
@@ -53,7 +80,7 @@ BytePattern NamcoSnesScanner::ptnStartSong(
 	,
 	"x?x?x?x?"
 	"x?x?x?x?"
-	"xxx?x??"
+	"x?x?x??"
 	,
 	23);
 
@@ -81,7 +108,7 @@ BytePattern NamcoSnesScanner::ptnLoadInstrTuning(
 	,
 	"x?x??xxx"
 	"?x?x?x?x"
-	"?xxx?x?x"
+	"?x?x?x?x"
 	"x?x?"
 	,
 	28);
@@ -101,9 +128,9 @@ BytePattern NamcoSnesScanner::ptnDspRegInit(
 	"\xd3\x09\x3f\xf7\x09\x3d\xc8\x18"
 	"\xd0\xf0"
 	,
-	"xxx??xxx"
+	"x?x??xxx"
 	"??x??xx?"
-	"xx"
+	"x?"
 	,
 	18);
 
@@ -120,7 +147,7 @@ void NamcoSnesScanner::Scan(RawFile *file, void *info) {
 
 void NamcoSnesScanner::SearchForNamcoSnesFromARAM(RawFile *file) {
   NamcoSnesVersion version = NAMCOSNES_NONE;
-  std::string name = file->tag.HasTitle() ? file->tag.title : RawFile::removeExtFromPath(file->GetFileName());
+  std::wstring name = file->tag.HasTitle() ? file->tag.title : RawFile::removeExtFromPath(file->GetFileName());
 
   // search song list
   uint32_t ofsReadSongList;
@@ -128,6 +155,10 @@ void NamcoSnesScanner::SearchForNamcoSnesFromARAM(RawFile *file) {
   if (file->SearchBytePattern(ptnReadSongList, ofsReadSongList)) {
     addrSongList = file->GetByte(ofsReadSongList + 5) | (file->GetByte(ofsReadSongList + 9) << 8);
     version = NAMCOSNES_STANDARD;
+  }
+  else if (file->SearchBytePattern(ptnReadSongListAlt, ofsReadSongList)) {
+    addrSongList = file->GetShort(file->GetShort(ofsReadSongList + 1));
+    version = NAMCOSNES_STANDARD_V2;
   }
   else {
     return;
@@ -137,12 +168,18 @@ void NamcoSnesScanner::SearchForNamcoSnesFromARAM(RawFile *file) {
   uint32_t ofsStartSong;
   uint8_t addrSongIndexArray;
   uint8_t addrSongSlotIndex;
-  if (file->SearchBytePattern(ptnStartSong, ofsStartSong)) {
-    addrSongIndexArray = file->GetByte(ofsStartSong + 11);
-    addrSongSlotIndex = file->GetByte(ofsStartSong + 15);
+  if (version == NAMCOSNES_STANDARD) {
+    if (file->SearchBytePattern(ptnStartSong, ofsStartSong)) {
+      addrSongIndexArray = file->GetByte(ofsStartSong + 11);
+      addrSongSlotIndex = file->GetByte(ofsStartSong + 15);
+    }
+    else {
+      return;
+    }
   }
-  else {
-    return;
+  else if(version == NAMCOSNES_STANDARD_V2) {
+    addrSongIndexArray = file->GetByte(ofsReadSongList + 20);
+    addrSongSlotIndex = file->GetByte(ofsReadSongList + 18);
   }
 
   // determine song index

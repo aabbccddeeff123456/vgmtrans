@@ -45,12 +45,20 @@ enum MoriSnesSeqEventType {
   EVENT_PITCHBEND,
   EVENT_INSTR,
   EVENT_TIMEBASE,
+  EVENT_MASTER_VOLUME,
+  EVENT_PARAM_MODITY,
+  EVENT_DSP_FLAG,
+  EVENT_DSP_FLAG_REL,
+  EVENT_TRANSPOSE_BY_CHANNEL,
+  EVENT_VOLUME_BY_CHANNEL,
+  EVENT_PAN_FROM_TABLE,
+  EVENT_DURATION_FROM_TABLE,
 };
 
 class MoriSnesSeq
     : public VGMSeq {
  public:
-  MoriSnesSeq(RawFile *file, MoriSnesVersion ver, uint32_t seqdataOffset, std::string newName = "Mint SNES Seq");
+  MoriSnesSeq(RawFile *file, MoriSnesVersion ver, uint32_t seqdataOffset, std::wstring newName = L"Mint SNES Seq");
   virtual ~MoriSnesSeq(void);
 
   virtual bool GetHeaderInfo(void);

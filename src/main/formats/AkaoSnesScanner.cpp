@@ -314,6 +314,33 @@ BytePattern AkaoSnesScanner::ptnReadPercussionTableV4(
   ,
   24);
 
+//; Romancing SaGa 3 SPC
+//0714: 8d 03     mov   y,#$03
+//0716: cf        mul   ya
+//0717: fd        mov   y,a
+//0718: f5 c0 f2  mov   a,$f2c0+x
+//071b: d0 06     bne   $0723
+//071d: f6 22 f1  mov   a,$f122+y
+//0720: d5 41 f2  mov   $f241+x,a
+//0723: f6 21 f1  mov   a,$f121+y
+//0726: c4 a6     mov   $a6,a
+//0728: f6 20 f1  mov   a,$f120+y
+//072b: 3f 64 1b  call  $1b64
+//072e: e4 a6     mov   a,$a6
+//0730: 6f        ret
+BytePattern AkaoSnesScanner::ptnReadPercussionTableV4RS3(
+  "\x8d\x03\xcf\xfd\xf5\xc0\xf2\xd0"
+  "\x06\xf6\x22\xf1\xd5\x41\xf2\xf6"
+  "\x21\xf1\xc4\xa6\xf6\x20\xf1\x3f"
+  "\x64\x1b\xe4\xa6\x6f"
+  ,
+  "x?xxx??x"
+  "?x??x??x"
+  "??x?x??x"
+  "??x?x"
+  ,
+  29);
+
 void AkaoSnesScanner::Scan(RawFile *file, void *info) {
   uint32_t nFileLength = file->size();
   if (nFileLength == 0x10000) {
@@ -328,7 +355,7 @@ void AkaoSnesScanner::Scan(RawFile *file, void *info) {
 void AkaoSnesScanner::SearchForAkaoSnesFromARAM(RawFile *file) {
   AkaoSnesVersion version = AKAOSNES_NONE;
   AkaoSnesMinorVersion minorVersion = AKAOSNES_NOMINORVERSION;
-  std::string name = file->tag.HasTitle() ? file->tag.title : RawFile::removeExtFromPath(file->GetFileName());
+  std::wstring name = file->tag.HasTitle() ? file->tag.title : RawFile::removeExtFromPath(file->GetFileName());
 
   // search for note length table
   uint32_t ofsReadNoteLength;
@@ -564,6 +591,10 @@ void AkaoSnesScanner::SearchForAkaoSnesFromARAM(RawFile *file) {
   if (file->SearchBytePattern(ptnReadPercussionTableV4, ofsReadPercussionTable))
   {
     addrPercussionTable = file->GetShort(ofsReadPercussionTable + 19);
+  }
+  else if (file->SearchBytePattern(ptnReadPercussionTableV4RS3, ofsReadPercussionTable))
+  {
+    addrPercussionTable = file->GetShort(ofsReadPercussionTable + 21);
   }
   else
   {

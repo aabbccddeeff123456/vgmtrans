@@ -67,12 +67,19 @@ enum PrismSnesSeqEventType {
   EVENT_GAIN_ENVELOPE_DECAY,
   EVENT_INSTRUMENT,
   EVENT_END,
+  EVENT_PITCH_ENVELOPE_ATTACK,
+  EVENT_MASTER_VOLUME,
+  EVENT_MASTER_VOLUME_SLIDE,
+  EVENT_MASTER_VOLUME_SLIDE_IN,
+  EVENT_MASTER_VOLUME_2,
+  EVENT_UNKNOWN2_DB,
+  EVENT_PERCUSSION_ENVELOPE_OFF,
 };
 
 class PrismSnesSeq
     : public VGMSeq {
  public:
-  PrismSnesSeq(RawFile *file, PrismSnesVersion ver, uint32_t seqdataOffset, std::string newName = "I'Max SNES Seq");
+  PrismSnesSeq(RawFile *file, PrismSnesVersion ver, uint32_t seqdataOffset, std::wstring newName = L"I'Max SNES Seq");
   virtual ~PrismSnesSeq(void);
 
   virtual bool GetHeaderInfo(void);
@@ -111,12 +118,16 @@ class PrismSnesTrack
   bool slur; // bit $01
   bool manualDuration; // bit $10
   bool prevNoteSlurred; // bit $20
+  bool percussion;
+  bool onPercussion;
   int8_t prevNoteKey;
   uint8_t autoDurationThreshold;
   uint8_t spcVolume;
   uint8_t loopCount;
   uint8_t loopCountAlt;
   uint16_t subReturnAddr;
+  uint16_t percussionTablePointer;
+  uint16_t percussionTableReturnAddr;
 
   bool ReadDeltaTime(uint32_t &curOffset, uint8_t &len);
   bool ReadDuration(uint32_t &curOffset, uint8_t len, uint8_t &durDelta);
@@ -127,4 +138,5 @@ class PrismSnesTrack
   void AddEchoVolumeEnvelope(uint16_t envelopeAddress);
   void AddGAINEnvelope(uint16_t envelopeAddress);
   void AddPanTable(uint16_t panTableAddress);
+  void AddPercussionEnvelope(uint16_t envelopeAddress);
 };

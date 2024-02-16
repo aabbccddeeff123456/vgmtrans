@@ -50,6 +50,8 @@ enum ChunSnesSeqEventType {
   EVENT_ECHO_OFF,
   EVENT_LOAD_PRESET,
   EVENT_END,
+  EVENT_REMOTE_RELEASE_RATE,
+  EVENT_GAIN,
 };
 
 enum ChunSnesSeqPresetType {
@@ -64,7 +66,7 @@ class ChunSnesSeq
               ChunSnesVersion ver,
               ChunSnesMinorVersion minorVer,
               uint32_t seqdataOffset,
-              std::string newName = "Chun SNES Seq");
+              std::wstring newName = L"Chun SNES Seq");
   virtual ~ChunSnesSeq(void);
 
   virtual bool GetHeaderInfo(void);

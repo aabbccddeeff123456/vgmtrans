@@ -46,6 +46,10 @@ enum NinSnesSeqEventType {
   EVENT_ECHO_VOLUME_FADE,
   EVENT_PITCH_SLIDE,
   EVENT_PERCCUSION_PATCH_BASE,
+  EVENT_NOP2,
+  EVENT_MUTE,
+  EVENT_FASTFORWARD_ON,
+  EVENT_FASTFORWARD_OFF,
 
   // Nintendo RD2:
       EVENT_RD2_PROGCHANGE_AND_ADSR,
@@ -113,7 +117,7 @@ class NinSnesSeq:
              uint8_t percussion_base = 0,
              const std::vector<uint8_t> &theVolumeTable = std::vector<uint8_t>(),
              const std::vector<uint8_t> &theDurRateTable = std::vector<uint8_t>(),
-             std::string theName = "NinSnes Seq");
+             std::wstring theName = L"NinSnes Seq");
   virtual ~NinSnesSeq();
 
   virtual bool GetHeaderInfo();
@@ -185,7 +189,7 @@ class NinSnesTrack
     : public SeqTrack {
  public:
   NinSnesTrack
-      (NinSnesSection *parentSection, long offset = 0, long length = 0, const std::string &theName = "NinSnes Track");
+      (NinSnesSection *parentSection, long offset = 0, long length = 0, const std::wstring &theName = L"NinSnes Track");
 
   virtual void ResetVars(void);
   virtual bool ReadEvent(void);

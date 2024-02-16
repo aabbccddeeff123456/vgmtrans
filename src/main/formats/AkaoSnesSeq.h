@@ -77,7 +77,6 @@ enum AkaoSnesSeqEventType {
   EVENT_ECHO_FIR,
   EVENT_CPU_CONTROLED_SET_VALUE,
   EVENT_CPU_CONTROLED_JUMP,
-  EVENT_CPU_CONTROLED_JUMP_V2,
   EVENT_PERC_ON,
   EVENT_PERC_OFF,
   EVENT_VOLUME_ALT,
@@ -86,6 +85,11 @@ enum AkaoSnesSeqEventType {
   EVENT_LOOP_RESTART,
   EVENT_IGNORE_MASTER_VOLUME_BY_PROGNUM,
   EVENT_PLAY_SFX,
+  EVENT_CPU_CONTROLED_JUMP_OLD,
+  EVENT_CPU_CONTROLED_JUMP_FF4,
+  EVENT_VIBRATO_HIGH_RATE,
+  EVENT_RESET_PARAM,
+  EVENT_PLAY_CUSTOM_VOICES,
 };
 
 class AkaoSnesSeq
@@ -96,7 +100,7 @@ class AkaoSnesSeq
               AkaoSnesMinorVersion minorVer,
               uint32_t seqdataOffset,
               uint32_t addrAPURelocBase,
-              std::string newName = "Square AKAO SNES Seq");
+              std::wstring newName = L"Square AKAO SNES Seq");
   virtual ~AkaoSnesSeq(void);
 
   virtual bool GetHeaderInfo(void);
@@ -119,6 +123,8 @@ class AkaoSnesSeq
 
   uint8_t TIMER0_FREQUENCY;
   bool PAN_8BIT;
+  uint16_t cpuCoutroledJumpAddr;
+  uint16_t sfxBaseAddress;
 
   uint32_t addrAPURelocBase;
   uint32_t addrROMRelocBase;
@@ -130,27 +136,29 @@ class AkaoSnesSeq
 
 
 class AkaoSnesTrack
-    : public SeqTrack {
- public:
-  AkaoSnesTrack(AkaoSnesSeq *parentFile, long offset = 0, long length = 0);
+  : public SeqTrack {
+public:
+  AkaoSnesTrack(AkaoSnesSeq* parentFile, long offset = 0, long length = 0);
   virtual void ResetVars(void);
   virtual bool ReadEvent(void);
 
   uint16_t ROMAddressToAPUAddress(uint16_t romAddress);
   uint16_t GetShortAddress(uint32_t offset);
 
- private:
+private:
   uint8_t onetimeDuration;
   bool slur;
   bool legato;
   bool percussion;
   uint8_t nonPercussionProgram;
-  bool jumpActivatedByMainCpu;
 
   uint8_t loopLevel;
   uint8_t loopIncCount[AKAOSNES_LOOP_LEVEL_MAX];
   uint8_t loopDecCount[AKAOSNES_LOOP_LEVEL_MAX];
   uint16_t loopStart[AKAOSNES_LOOP_LEVEL_MAX];
 
+  uint8_t cpuCoutroledJumpValue;
+
   uint8_t ignoreMasterVolumeProgNum;
 };
+

@@ -3,6 +3,8 @@
 #include "ChunSnesSeq.h"
 #include "ChunSnesInstr.h"
 
+// TODO:Add scan for version 19950804
+
 //; Otogirisou SPC
 //0eca: d5 1d 05  mov   $051d+x,a         ; $051D+X = A
 //0ecd: c9 66 05  mov   $0566,x
@@ -397,7 +399,7 @@ void ChunSnesScanner::Scan(RawFile *file, void *info) {
 void ChunSnesScanner::SearchForChunSnesFromARAM(RawFile *file) {
   ChunSnesVersion version = CHUNSNES_NONE;
   ChunSnesMinorVersion minorVersion = CHUNSNES_NOMINORVERSION;
-  std::string name = file->tag.HasTitle() ? file->tag.title : RawFile::removeExtFromPath(file->GetFileName());
+  std::wstring name = file->tag.HasTitle() ? file->tag.title : RawFile::removeExtFromPath(file->GetFileName());
 
   // search song list and detect engine version
   uint32_t ofsLoadSeq;

@@ -21,5 +21,5 @@ enum SoftCreatSnesVersion {
   SOFTCREATSNES_V2,        // Plok!
   SOFTCREATSNES_V3,        // Spider-Man and Venom: Maximum Carnage
   SOFTCREATSNES_V4,        // The Tick, Ken Griffey Jr. Presents Major League Baseball
-  SOFTCREATSNES_V5,        // Tin Star, Foreman for Real
+  SOFTCREATSNES_V5,        // Tin Star, Foreman for Real, Uniracer
 };

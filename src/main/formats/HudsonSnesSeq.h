@@ -99,7 +99,7 @@ class HudsonSnesSeq
     : public VGMSeq {
  public:
   HudsonSnesSeq
-      (RawFile *file, HudsonSnesVersion ver, uint32_t seqdataOffset, std::string newName = "Hudson SNES Seq");
+      (RawFile *file, HudsonSnesVersion ver, uint32_t seqdataOffset, std::wstring newName = L"Hudson SNES Seq");
   virtual ~HudsonSnesSeq(void);
 
   virtual bool GetHeaderInfo(void);
@@ -144,6 +144,7 @@ class HudsonSnesTrack
   bool prevNoteSlurred;
   uint16_t infiniteLoopPoint;
   bool loopPointOnceProcessed;
+  bool percussion;
   uint8_t spcNoteQuantize;
   uint8_t spcVolume;
   uint8_t spcCallStack[HUDSONSNES_CALLSTACK_SIZE]; // shared by multiple commands

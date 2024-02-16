@@ -12,7 +12,7 @@ HudsonSnesInstrSet::HudsonSnesInstrSet(RawFile *file,
                                        uint32_t length,
                                        uint32_t spcDirAddr,
                                        uint32_t addrSampTuningTable,
-                                       const std::string &name) :
+                                       const std::wstring &name) :
     VGMInstrSet(HudsonSnesFormat::name, file, offset, length, name), version(ver),
     spcDirAddr(spcDirAddr),
     addrSampTuningTable(addrSampTuningTable) {
@@ -46,8 +46,8 @@ bool HudsonSnesInstrSet::GetInstrPointers() {
 
     usedSRCNs.push_back(srcn);
 
-    std::ostringstream instrName;
-    instrName << "Instrument " << instrNum;
+    std::wostringstream instrName;
+    instrName << L"Instrument " << instrNum;
     HudsonSnesInstr *newInstr =
         new HudsonSnesInstr(this, version, ofsInstrEntry, instrNum, spcDirAddr, addrSampTuningTable, instrName.str());
     aInstrs.push_back(newInstr);
@@ -76,7 +76,7 @@ HudsonSnesInstr::HudsonSnesInstr(VGMInstrSet *instrSet,
                                  uint8_t instrNum,
                                  uint32_t spcDirAddr,
                                  uint32_t addrSampTuningTable,
-                                 const std::string &name) :
+                                 const std::wstring &name) :
     VGMInstr(instrSet, offset, 4, 0, instrNum, name), version(ver),
     spcDirAddr(spcDirAddr),
     addrSampTuningTable(addrSampTuningTable) {
@@ -123,38 +123,35 @@ HudsonSnesRgn::HudsonSnesRgn(HudsonSnesInstr *instr,
   uint8_t adsr2 = GetByte(dwOffset + 2);
   uint8_t gain = GetByte(dwOffset + 3);
 
-  AddSimpleItem(dwOffset, 1, "SRCN");
-  AddSimpleItem(dwOffset + 1, 1, "ADSR(1)");
-  AddSimpleItem(dwOffset + 2, 1, "ADSR(2)");
-  AddSimpleItem(dwOffset + 3, 1, "GAIN");
+  AddSimpleItem(dwOffset, 1, L"SRCN");
+  AddSimpleItem(dwOffset + 1, 1, L"ADSR(1)");
+  AddSimpleItem(dwOffset + 2, 1, L"ADSR(2)");
+  AddSimpleItem(dwOffset + 3, 1, L"GAIN");
 
-  const double pitch_fixer = 4286.0 / 4096.0;  // from pitch table ($10be vs $1000)
-  const double pitch_scale = GetShortBE(addrTuningEntry) / 256.0;
+  double pitch_scale = GetShortBE(addrTuningEntry) / 256.0;
+  double fine_tuning;
   double coarse_tuning;
-  double fine_tuning = modf((log(pitch_scale * pitch_fixer) / log(2.0)) * 12.0, &coarse_tuning);
-
-  const int8_t coarse_tuning_byte = GetByte(addrTuningEntry + 2);
-  const int8_t fine_tuning_byte = GetByte(addrTuningEntry + 3);
-  coarse_tuning += coarse_tuning_byte;
-  fine_tuning += fine_tuning_byte / 256.0;
+  fine_tuning = modf((log(pitch_scale) / log(2.0)) * 12.0, &coarse_tuning);
 
   // normalize
-  while (fabs(fine_tuning) >= 1.0) {
-    if (fine_tuning >= 0.5) {
-      coarse_tuning += 1.0;
-      fine_tuning -= 1.0;
-    } else if (fine_tuning <= -0.5) {
-      coarse_tuning -= 1.0;
-      fine_tuning += 1.0;
-    }
+  if (fine_tuning >= 0.5) {
+    coarse_tuning += 1.0;
+    fine_tuning -= 1.0;
+  }
+  else if (fine_tuning <= -0.5) {
+    coarse_tuning -= 1.0;
+    fine_tuning += 1.0;
   }
 
-  unityKey = 72 - static_cast<int>(coarse_tuning);
-  fineTune = static_cast<int16_t>(fine_tuning * 100.0);
+  int8_t coarse_tuning_byte = GetByte(addrTuningEntry + 2);
+  int8_t fine_tuning_byte = GetByte(addrTuningEntry + 3);
 
-  AddSimpleItem(addrTuningEntry, 2, "Pitch Multiplier");
-  AddSimpleItem(addrTuningEntry + 2, 1, "Coarse Tune");
-  AddSimpleItem(addrTuningEntry + 3, 1, "Fine Tune");
+  unityKey = 71 - (int) (coarse_tuning) - coarse_tuning_byte;
+  fineTune = (int16_t) (fine_tuning + (fine_tuning_byte / 256.0) * 100.0);
+
+  AddSimpleItem(addrTuningEntry, 2, L"Pitch Multiplier");
+  AddSimpleItem(addrTuningEntry + 2, 1, L"Coarse Tune");
+  AddSimpleItem(addrTuningEntry + 3, 1, L"Fine Tune");
   SNESConvADSR<VGMRgn>(this, adsr1, adsr2, gain);
 }
 
