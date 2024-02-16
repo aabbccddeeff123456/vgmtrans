@@ -29,7 +29,7 @@ void AccoladeSnesScanner::Scan(RawFile* file, void* info) {
 
 void AccoladeSnesScanner::SearchForAccoladeSnesFromARAM(RawFile* file) {
   AccoladeSnesVersion version = ACCOLADESNES_NONE;
-  std::wstring name = file->tag.HasTitle() ? file->tag.title : RawFile::removeExtFromPath(file->GetFileName());
+  std::string name = file->tag.HasTitle() ? file->tag.title : RawFile::removeExtFromPath(file->GetFileName());
 
   // search song list
   uint32_t ofsLoadSeq;
