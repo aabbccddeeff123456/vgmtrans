@@ -102,8 +102,8 @@ void NinRD1SnesSeq::LoadEventMap() {
   EventMap[0xbe] = EVENT_PROGCHANGE;
   EventMap[0xbf] = EVENT_VELOCITY;
   EventMap[0xc0] = EVENT_PAN;
-  EventMap[0xc1] = EVENT_VIBRATO_DEPTH;
-  EventMap[0xc2] = EVENT_VIBRATO_RATE;
+  EventMap[0xc1] = EVENT_PITCH_BEND;
+  EventMap[0xc2] = EVENT_PITCH_BEND_RANGE;
   EventMap[0xc3] = EVENT_LFO_SPEED;
   EventMap[0xc4] = EVENT_VIBRATO_DELAY;
   EventMap[0xc5] = EVENT_LFO_RATE;
@@ -111,7 +111,7 @@ void NinRD1SnesSeq::LoadEventMap() {
   EventMap[0xc7] = EventMap[0xb1];
   EventMap[0xc8] = EventMap[0xb1];
   EventMap[0xc9] = EVENT_TUNING;
-  EventMap[0xca] = EVENT_NOP1;
+  EventMap[0xca] = EVENT_UNKNOWN1;
   EventMap[0xcb] = EventMap[0xb1];
   EventMap[0xcc] = EventMap[0xb1];
   EventMap[0xcd] = EVENT_SUBCOMMAND;
@@ -225,6 +225,20 @@ bool NinRD1SnesTrack::ReadEvent(void) {
     break;
   }
 
+      case EVENT_PITCH_BEND:
+    AddGenericEvent(beginOffset, curOffset - beginOffset, L"Pitch Bend State", L"",
+                    CLR_CHANGESTATE);
+    state = STATE_PITCHBEND;
+    break;
+
+  // pitch bend range
+      case EVENT_PITCH_BEND_RANGE:
+    curOffset++;
+    AddGenericEvent(beginOffset, curOffset - beginOffset, L"Pitch Bend Range", L"",
+                    CLR_PITCHBENDRANGE);
+    state = STATE_MODULATION_RATE;
+    break;
+
   case EVENT_TEMPO: {
     uint8_t newTempo = GetByte(curOffset++);
     AddTempoBPM(beginOffset, curOffset - beginOffset, newTempo);
@@ -232,10 +246,9 @@ bool NinRD1SnesTrack::ReadEvent(void) {
   }
 
   case EVENT_TUNING: {
-    state = STATE_PITCHBEND;
-    uint8_t newTempo = GetByte(curOffset++);
-    //AddFineTuning(beginOffset, curOffset - beginOffset, newTempo);
-    AddPitchBend(beginOffset, curOffset - beginOffset, ((int16_t)(newTempo - 0x40)) * 128);
+    state = STATE_TUNING;
+    curOffset++;
+    AddGenericEvent(beginOffset, curOffset - beginOffset, L"Microtune", L"", CLR_PITCHBEND);
     break;
   }
 
@@ -295,7 +308,7 @@ bool NinRD1SnesTrack::ReadEvent(void) {
     state = STATE_LFO_SPEED;
     uint8_t arg1 = GetByte(curOffset++);
     desc << L"Speed: " << (int)arg1;
-    AddGenericEvent(beginOffset, curOffset - beginOffset, L"LFO Speed", desc.str().c_str(), CLR_MISC);
+    AddGenericEvent(beginOffset, curOffset - beginOffset, L"LFO Speed", desc.str().c_str(), CLR_LFO);
     break;
   }
 
@@ -303,7 +316,7 @@ bool NinRD1SnesTrack::ReadEvent(void) {
     state = STATE_LFO_RATE;
     uint8_t arg1 = GetByte(curOffset++);
     desc << L"Rate: " << (int)arg1;
-    AddGenericEvent(beginOffset, curOffset - beginOffset, L"LFO Rate", desc.str().c_str(), CLR_MISC);
+    AddGenericEvent(beginOffset, curOffset - beginOffset, L"LFO Rate", desc.str().c_str(), CLR_LFO);
     break;
   }
 
@@ -311,15 +324,15 @@ bool NinRD1SnesTrack::ReadEvent(void) {
     state = STATE_PAN_LFO_SPEED;
     uint8_t arg1 = GetByte(curOffset++);
     desc << L"Speed: " << (int)arg1;
-    AddGenericEvent(beginOffset, curOffset - beginOffset, L"Pan LFO Speed", desc.str().c_str(), CLR_PAN);
+    AddGenericEvent(beginOffset, curOffset - beginOffset, L"Pan LFO Speed", desc.str().c_str(), CLR_LFO);
     break;
   }
 
   case EVENT_VIBRATO_DELAY: {
     state = STATE_MODULATION_DELAY;
     uint8_t arg1 = GetByte(curOffset++);
-    desc << L"Vibrato Delay: " << (int)arg1;
-    AddGenericEvent(beginOffset, curOffset - beginOffset, L"Vibrato Delay", desc.str().c_str(), CLR_MODULATION);
+    desc << L"LFO Delay: " << (int)arg1;
+    AddGenericEvent(beginOffset, curOffset - beginOffset, L"LFO Delay", desc.str().c_str(), CLR_LFO);
     break;
   }
 
@@ -484,19 +497,21 @@ bool NinRD1SnesTrack::ReadEvent(void) {
         AddModulation(beginOffset, curOffset - beginOffset, statusByte);
         break;
       case STATE_MODULATION_RATE:
-        AddBreath(beginOffset, curOffset - beginOffset, statusByte);
+        AddPitchBendRange(beginOffset, curOffset - beginOffset, statusByte);
         break;
       case STATE_MODULATION_DELAY:
-        AddGenericEvent(beginOffset, curOffset - beginOffset, L"Vibrato Delay", desc.str().c_str(), CLR_MODULATION);
+        AddGenericEvent(beginOffset, curOffset - beginOffset, L"LFO Delay", desc.str().c_str(), CLR_LFO);
         break;
       case STATE_PAN_LFO_SPEED:
         AddGenericEvent(beginOffset, curOffset - beginOffset, L"Pan LFO Speed", desc.str().c_str(), CLR_MODULATION);
         break;
       case STATE_LFO_SPEED:
-        AddGenericEvent(beginOffset, curOffset - beginOffset, L"LFO Speed", desc.str().c_str(), CLR_MISC);
+        AddGenericEvent(beginOffset, curOffset - beginOffset, L"LFO Speed", desc.str().c_str(),
+                        CLR_LFO);
         break;
       case STATE_LFO_RATE:
-        AddGenericEvent(beginOffset, curOffset - beginOffset, L"LFO Rate", desc.str().c_str(), CLR_MISC);
+        AddGenericEvent(beginOffset, curOffset - beginOffset, L"LFO Rate", desc.str().c_str(),
+                        CLR_LFO);
         break;
       case STATE_TUNING:
         AddGenericEvent(beginOffset, curOffset - beginOffset, L"Microtune", desc.str().c_str(), CLR_PITCHBEND);

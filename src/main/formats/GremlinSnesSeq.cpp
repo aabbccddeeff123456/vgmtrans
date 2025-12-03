@@ -121,6 +121,8 @@ void GremlinSnesTrack::ResetVars(void) {
   SeqTrack::ResetVars();
 
   currentSection = 0;
+  restIsOn = false;
+  delta = 0;
 }
 
 bool GremlinSnesTrack::ReadEvent(void) {
@@ -132,128 +134,286 @@ bool GremlinSnesTrack::ReadEvent(void) {
   }
 
   uint8_t statusByte = GetByte(curOffset++);
+  // Running Status
+
   bool bContinue = true;
 
   std::wstringstream desc;
 
-  GremlinSnesSeqEventType eventType = (GremlinSnesSeqEventType)0;
-  std::map<uint8_t, GremlinSnesSeqEventType>::iterator pEventType = parentSeq->EventMap.find(statusByte);
-  if (pEventType != parentSeq->EventMap.end()) {
-    eventType = pEventType->second;
+  if (restIsOn == true) {
+    restIsOn = false;
+  } else {
+  if (statusByte <= 0xdf && statusByte >= 0xc0) {
+    uint8_t newVol = (statusByte * 0x08 + 7);
+    AddVol(beginOffset, curOffset - beginOffset, newVol);
+  } else if (statusByte <= 0x9f && statusByte >= 0x80) {
+    uint8_t progNumber = statusByte & 0x0f;
+    uint8_t len = GetByte(curOffset++);
+    AddPercNoteByDur(beginOffset, curOffset - beginOffset, progNumber, 0x7f, len);
+    AddTime(len);
+  } else if (statusByte <= 0xbf && statusByte >= 0xa0) {
+    uint8_t progNumber = statusByte & 0x0f;
+    AddProgramChange(beginOffset, curOffset - beginOffset, progNumber);
+  } else if (statusByte <= 0x7f && statusByte != 0x00) {
+    uint8_t progNumber = statusByte -1;
+    uint8_t len = GetByte(curOffset++);
+    AddNoteByDur(beginOffset, curOffset - beginOffset, progNumber, 0x7f, len);
+    AddTime(len);
+  } else if (statusByte == 0x00) {
+    uint8_t len = GetByte(curOffset++);
+    AddRest(beginOffset, curOffset - beginOffset, len);
   }
-
-  switch (eventType) {
-  case EVENT_UNKNOWN0:
-    desc << L"Event: 0x" << std::hex << std::setfill(L'0') << std::setw(2) << std::uppercase << (int)statusByte;
-    AddUnknown(beginOffset, curOffset - beginOffset, L"Unknown Event", desc.str());
-    break;
-
-  case EVENT_UNKNOWN1: {
-    uint8_t arg1 = GetByte(curOffset++);
-    desc << L"Event: 0x" << std::hex << std::setfill(L'0') << std::setw(2) << std::uppercase << (int)statusByte
-      << std::dec << std::setfill(L' ') << std::setw(0)
-      << L"  Arg1: " << (int)arg1;
-    AddUnknown(beginOffset, curOffset - beginOffset, L"Unknown Event", desc.str());
-    break;
-  }
-
-  case EVENT_UNKNOWN2: {
-    uint8_t arg1 = GetByte(curOffset++);
-    uint8_t arg2 = GetByte(curOffset++);
-    desc << L"Event: 0x" << std::hex << std::setfill(L'0') << std::setw(2) << std::uppercase << (int)statusByte
-      << std::dec << std::setfill(L' ') << std::setw(0)
-      << L"  Arg1: " << (int)arg1
-      << L"  Arg2: " << (int)arg2;
-    AddUnknown(beginOffset, curOffset - beginOffset, L"Unknown Event", desc.str());
-    break;
-  }
-
-  case EVENT_UNKNOWN3: {
-    uint8_t arg1 = GetByte(curOffset++);
-    uint8_t arg2 = GetByte(curOffset++);
-    uint8_t arg3 = GetByte(curOffset++);
-    desc << L"Event: 0x" << std::hex << std::setfill(L'0') << std::setw(2) << std::uppercase << (int)statusByte
-      << std::dec << std::setfill(L' ') << std::setw(0)
-      << L"  Arg1: " << (int)arg1
-      << L"  Arg2: " << (int)arg2
-      << L"  Arg3: " << (int)arg3;
-    AddUnknown(beginOffset, curOffset - beginOffset, L"Unknown Event", desc.str());
-    break;
-  }
-
-  case EVENT_UNKNOWN4: {
-    uint8_t arg1 = GetByte(curOffset++);
-    uint8_t arg2 = GetByte(curOffset++);
-    uint8_t arg3 = GetByte(curOffset++);
-    uint8_t arg4 = GetByte(curOffset++);
-    desc << L"Event: 0x" << std::hex << std::setfill(L'0') << std::setw(2) << std::uppercase << (int)statusByte
-      << std::dec << std::setfill(L' ') << std::setw(0)
-      << L"  Arg1: " << (int)arg1
-      << L"  Arg2: " << (int)arg2
-      << L"  Arg3: " << (int)arg3
-      << L"  Arg4: " << (int)arg4;
-    AddUnknown(beginOffset, curOffset - beginOffset, L"Unknown Event", desc.str());
-    break;
-  }
-
-  case EVENT_PAN: {
-    int8_t newPan = GetByte(curOffset++) / 2;
-      AddPan(beginOffset, curOffset - beginOffset, newPan);
-    break;
-  }
-
-  case EVENT_REST: {
-    uint8_t arg1 = GetByte(curOffset++);
-    if (arg1 <= 0x7f) {
-      AddRest(beginOffset, curOffset - beginOffset, arg1);
+  else {
+    GremlinSnesSeqEventType eventType = (GremlinSnesSeqEventType)0;
+    std::map<uint8_t, GremlinSnesSeqEventType>::iterator pEventType =
+        parentSeq->EventMap.find(statusByte);
+    if (pEventType != parentSeq->EventMap.end()) {
+      eventType = pEventType->second;
     }
-    else {
-      uint8_t arg2 = GetByte(curOffset++);
-      if (arg2 & 0x40) {
-        if (arg2 & 0x20) {
-          curOffset--;  //vcmd
-          break;
+
+    switch (statusByte) {
+      case EVENT_UNKNOWN0:
+        desc << L"Event: 0x" << std::hex << std::setfill(L'0') << std::setw(2) << std::uppercase
+             << (int)statusByte;
+        AddUnknown(beginOffset, curOffset - beginOffset, L"Unknown Event", desc.str());
+        break;
+
+      case EVENT_UNKNOWN1: {
+        uint8_t arg1 = GetByte(curOffset++);
+        desc << L"Event: 0x" << std::hex << std::setfill(L'0') << std::setw(2) << std::uppercase
+             << (int)statusByte << std::dec << std::setfill(L' ') << std::setw(0) << L"  Arg1: "
+             << (int)arg1;
+        AddUnknown(beginOffset, curOffset - beginOffset, L"Unknown Event", desc.str());
+        break;
+      }
+
+      case EVENT_UNKNOWN2: {
+        uint8_t arg1 = GetByte(curOffset++);
+        uint8_t arg2 = GetByte(curOffset++);
+        desc << L"Event: 0x" << std::hex << std::setfill(L'0') << std::setw(2) << std::uppercase
+             << (int)statusByte << std::dec << std::setfill(L' ') << std::setw(0) << L"  Arg1: "
+             << (int)arg1 << L"  Arg2: " << (int)arg2;
+        AddUnknown(beginOffset, curOffset - beginOffset, L"Unknown Event", desc.str());
+        break;
+      }
+
+      case EVENT_UNKNOWN3: {
+        uint8_t arg1 = GetByte(curOffset++);
+        uint8_t arg2 = GetByte(curOffset++);
+        uint8_t arg3 = GetByte(curOffset++);
+        desc << L"Event: 0x" << std::hex << std::setfill(L'0') << std::setw(2) << std::uppercase
+             << (int)statusByte << std::dec << std::setfill(L' ') << std::setw(0) << L"  Arg1: "
+             << (int)arg1 << L"  Arg2: " << (int)arg2 << L"  Arg3: " << (int)arg3;
+        AddUnknown(beginOffset, curOffset - beginOffset, L"Unknown Event", desc.str());
+        break;
+      }
+
+      case EVENT_UNKNOWN4: {
+        uint8_t arg1 = GetByte(curOffset++);
+        uint8_t arg2 = GetByte(curOffset++);
+        uint8_t arg3 = GetByte(curOffset++);
+        uint8_t arg4 = GetByte(curOffset++);
+        desc << L"Event: 0x" << std::hex << std::setfill(L'0') << std::setw(2) << std::uppercase
+             << (int)statusByte << std::dec << std::setfill(L' ') << std::setw(0) << L"  Arg1: "
+             << (int)arg1 << L"  Arg2: " << (int)arg2 << L"  Arg3: " << (int)arg3 << L"  Arg4: "
+             << (int)arg4;
+        AddUnknown(beginOffset, curOffset - beginOffset, L"Unknown Event", desc.str());
+        break;
+      }
+
+case 0xe0: {
+        int8_t newVol = GetByte(curOffset++);
+        if (GetByte(curOffset) <= 0x7f) {
+          uint8_t len = GetByte(curOffset++);
+          AddTime(len);
         }
-        else {
-          arg1 = arg2 & 0x1f;
-          arg1 = arg1 * 6;
-          arg1 += 0x07;
-          vel = arg1;
-          AddGenericEvent(beginOffset, curOffset - beginOffset, L"Velocity", desc.str().c_str(), CLR_NOTEON, ICON_CONTROL);
+        AddVol(beginOffset, curOffset - beginOffset, newVol);
+        break;
+      }
+
+         case 0xe1: {
+        int8_t newTempo = GetByte(curOffset++);
+        if (GetByte(curOffset) <= 0x7f) {
+          uint8_t len = GetByte(curOffset++);
+          AddTime(len);
         }
+        AddTempo(beginOffset, curOffset - beginOffset, parentSeq->GetTempoInBPM(newTempo));
+        break;
       }
-      else if (arg2 & 0x20) {
-        arg1 = arg2 & 0x1f;
-        AddTranspose(beginOffset, curOffset - beginOffset, arg1);
-      }
-      else {
 
+                  case 0xe2: {
+        uint8_t newTempo = GetByte(curOffset++);
+        if (GetByte(curOffset) <= 0x7f) {
+          uint8_t len = GetByte(curOffset++);
+          AddTime(len);
+        }
+        AddPortamentoTime(beginOffset, curOffset - beginOffset, newTempo, L"Portamento");
+        break;
       }
+       case 0xe3: {
+        uint8_t arg1 = GetByte(curOffset++);
+        uint8_t arg2 = GetByte(curOffset++);
+        if (GetByte(curOffset) <= 0x7f) {
+          uint8_t len = GetByte(curOffset++);
+          AddTime(len);
+        }
+        desc << L"Arg1: " << (int)arg1 << L"  Arg2: " << (int)arg2;
+        AddGenericEvent(beginOffset, curOffset - beginOffset, L"Pitch Slide?", desc.str().c_str(),
+                        CLR_PITCHBEND, ICON_CONTROL);
+        break;
+       }
+
+      case 0xe4: {
+        int8_t newPan = GetByte(curOffset++) / 2;
+        if (GetByte(curOffset) <= 0x7f) {
+          uint8_t len = GetByte(curOffset++);
+          AddTime(len);
+        }
+        AddPan(beginOffset, curOffset - beginOffset, newPan);
+        break;
+      }
+
+      case 0xe5: {
+        if (GetByte(curOffset) <= 0x7f) {
+          uint8_t len = GetByte(curOffset++);
+          AddTime(len);
+        }
+        AddUnknown(beginOffset, curOffset - beginOffset, L"Unknown Event", desc.str());
+        break;
+      }
+
+      case 0xe6: {
+        uint8_t arg1 = GetByte(curOffset++);
+        uint8_t arg2 = GetByte(curOffset++);
+        uint8_t arg3 = GetByte(curOffset++);
+        if (GetByte(curOffset) <= 0x7f) {
+          uint8_t len = GetByte(curOffset++);
+          AddTime(len);
+        }
+        desc << L"Arg1: "
+             << (int)arg1 << L"  Arg2: " << (int)arg2 << L"  Arg3: " << (int)arg3;
+        AddGenericEvent(beginOffset, curOffset - beginOffset, L"Echo Param", desc.str().c_str(),
+                        CLR_REVERB, ICON_CONTROL);
+        break;
+      }
+
+      case 0xe7: {
+        if (GetByte(curOffset) <= 0x7f) {
+          uint8_t len = GetByte(curOffset++);
+          AddTime(len);
+        }
+        AddUnknown(beginOffset, curOffset - beginOffset, L"Conditional Key-Off", desc.str());
+        break;
+      }
+
+      case 0xea:
+      case 0xeb:
+      case 0xec:
+      case 0xed:
+      case 0xee:
+      case 0xef:
+      case 0xf0:
+      case 0xf1:
+      case 0xf2:
+      case 0xf3:
+      case 0xf4:
+      case 0xf5:
+      case 0xf6:
+      case 0xf7:
+      case 0xf8:
+      case 0xf9:
+      case 0xfa:
+      case 0xfb:
+      case 0xfc:
+      case 0xfd:
+      case 0xfe:
+      {
+        if (GetByte(curOffset) <= 0x7f) {
+          uint8_t len = GetByte(curOffset++);
+          AddTime(len);
+        }
+        AddGenericEvent(beginOffset, curOffset - beginOffset, L"NOP", desc.str().c_str(),
+                        CLR_MISC, ICON_CONTROL);
+        break;
+      }
+
+      case 0xe8: {
+        uint8_t arg1 = GetByte(curOffset++);
+        //if (GetByte(curOffset) <= 0x7f) {
+        //  uint8_t len = GetByte(curOffset++);
+        //  AddTime(len);
+        //}
+        desc << L"Arg1: " << (int)arg1;
+        AddGenericEvent(beginOffset, curOffset - beginOffset, L"Release Type", desc.str().c_str(), CLR_MISC,
+                        ICON_CONTROL);
+        break;
+      }
+
+      case 0xe9: {
+        int8_t newPan = GetByte(curOffset++) / 2;
+        if (GetByte(curOffset) <= 0x7f) {
+          uint8_t len = GetByte(curOffset++);
+          AddTime(len);
+        }
+        AddPan(beginOffset, curOffset - beginOffset, newPan, L"Conditional Pan?");
+        
+        break;
+      }
+
+      case EVENT_REST: {
+        uint8_t arg1 = GetByte(curOffset++);
+        if (arg1 <= 0x7f) {
+          AddRest(beginOffset, curOffset - beginOffset, arg1);
+        } else {
+          uint8_t arg2 = GetByte(curOffset++);
+          if (arg2 & 0x40) {
+            if (arg2 & 0x20) {
+              curOffset--;  // vcmd
+              break;
+            } else {
+              arg1 = arg2 & 0x1f;
+              arg1 = arg1 * 6;
+              arg1 += 0x07;
+              vel = arg1;
+              AddGenericEvent(beginOffset, curOffset - beginOffset, L"Velocity", desc.str().c_str(),
+                              CLR_NOTEON, ICON_CONTROL);
+            }
+          } else if (arg2 & 0x20) {
+            arg1 = arg2 & 0x1f;
+            AddTranspose(beginOffset, curOffset - beginOffset, arg1);
+          } else {
+          }
+        }
+        break;
+      }
+
+      case 0xff: {
+        AddGenericEvent(beginOffset, curOffset - beginOffset, L"Section End", desc.str().c_str(),
+                        CLR_TRACKEND, ICON_CONTROL);
+        uint16_t nextSectionPtr = parentSeq->currentSectionPointer[channel] + currentSection * 2;
+        currentSection++;
+        if (nextSectionPtr != 0xffff) {
+          curOffset = GetShort(nextSectionPtr) + parentSeq->dwOffset;
+        } else {
+          bContinue = false;
+        }
+        break;
+      }
+
+      default:
+        desc << L"Event: 0x" << std::hex << std::setfill(L'0') << std::setw(2) << std::uppercase
+             << (int)statusByte;
+        AddUnknown(beginOffset, curOffset - beginOffset, L"Unknown Event", desc.str());
+        pRoot->AddLogItem(new LogItem((std::wstring(L"Unknown Event - ") + desc.str()).c_str(),
+                                      LOG_LEVEL_ERR, L"GremlinSnesSeq"));
+        bContinue = false;
+        break;
     }
-    break;
+    //if (GetByte(curOffset + 1) <= 0x7f) {
+    //  uint8_t len = GetByte(curOffset++);
+    //  AddTime(len);
+   // }
   }
-
-  case EVENT_END: {
-    AddGenericEvent(beginOffset, curOffset - beginOffset, L"Section End", desc.str().c_str(), CLR_TRACKEND, ICON_CONTROL);
-    uint16_t nextSectionPtr = parentSeq->currentSectionPointer[channel] + currentSection * 2;
-    currentSection++;
-    if (nextSectionPtr != 0xffff) {
-      curOffset = GetShort(nextSectionPtr) + parentSeq->dwOffset;
-    }
-    else {
-      bContinue = false;
-    }
-    break;
-  }
-
-  default:
-    desc << L"Event: 0x" << std::hex << std::setfill(L'0') << std::setw(2) << std::uppercase << (int)statusByte;
-    AddUnknown(beginOffset, curOffset - beginOffset, L"Unknown Event", desc.str());
-    pRoot->AddLogItem(new LogItem((std::wstring(L"Unknown Event - ") + desc.str()).c_str(),
-      LOG_LEVEL_ERR,
-      L"GremlinSnesSeq"));
-    bContinue = false;
-    break;
   }
 
   //std::wostringstream ssTrace;

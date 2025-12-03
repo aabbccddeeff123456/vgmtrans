@@ -37,6 +37,7 @@ bool DSESeq::GetHeaderInfo(void) {
   VGMHeader* smdlHeader = AddHeader(dwOffset, 64, L"SMDL Chunk Header");
   smdlHeader->AddSimpleItem(dwOffset, 4, L"Signature");
   smdlHeader->AddSimpleItem(dwOffset + 8, 4, L"File Size");
+  DSESeq::unLength = GetWord(dwOffset + 8);
   smdlHeader->AddSimpleItem(dwOffset + 0x0c, 2, L"Version");
   uint16_t myVer = GetShort(dwOffset + 0x0c); // the reason why we need this is
                                               //Luminous Arc has version 0x0402, it has a different header format
@@ -386,7 +387,7 @@ bool DSETrack::ReadEvent(void) {
       }
         AddNoteByDur_Extend(beginOffset, curOffset - beginOffset, noteNumber + octave * 12, vel,
                             spcNoteDuration);
-        AddTime(spcNoteDuration);
+        //AddTime(spcNoteDuration);
       break;
     }
 

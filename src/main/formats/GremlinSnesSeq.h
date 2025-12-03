@@ -53,4 +53,6 @@ public:
   virtual bool ReadEvent(void);
 
   uint8_t currentSection;
+  bool restIsOn;
+  uint32_t delta;
 };
