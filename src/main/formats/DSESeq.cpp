@@ -204,17 +204,17 @@ void DSESeq::LoadEventMap() {
   EventMap[0xbe] = EVENT_MODULATION;
   EventMap[0xbf] = EVENT_UNKNOWN1;
 
-  EventMap[0xc0] = EVENT_UNKNOWN3;
+  EventMap[0xc0] = EVENT_SLUR;  // set to 1 cause problem
   EventMap[0xc3] = EVENT_UNKNOWN1;
   EventMap[0xcb] = EVENT_NOP2;
 
   EventMap[0xd0] = EVENT_UNKNOWN1;
   EventMap[0xd1] = EVENT_UNKNOWN1;
   EventMap[0xd2] = EVENT_UNKNOWN1;
-  EventMap[0xd3] = EVENT_UNKNOWN1;
-  EventMap[0xd4] = EVENT_UNKNOWN1;
-  EventMap[0xd5] = EVENT_UNKNOWN1;
-  EventMap[0xd6] = EVENT_UNKNOWN1;
+  EventMap[0xd3] = EVENT_UNKNOWN2;
+  EventMap[0xd4] = EVENT_PITCH_SLIDE;
+  EventMap[0xd5] = EVENT_UNKNOWN2;
+  EventMap[0xd6] = EVENT_UNKNOWN2;
   EventMap[0xd7] = EVENT_PITCH_BEND;
   EventMap[0xd8] = EVENT_UNKNOWN2;
   EventMap[0xdb] = EVENT_UNKNOWN1;
@@ -224,14 +224,14 @@ void DSESeq::LoadEventMap() {
 
   EventMap[0xe0] = EVENT_VOLUME;
   EventMap[0xe1] = EVENT_UNKNOWN1;
-  EventMap[0xe2] = EVENT_UNKNOWN3;
+  EventMap[0xe2] = EVENT_VOLUME_FADE;
   EventMap[0xe3] = EVENT_EXPRESSION;
   EventMap[0xe4] = EVENT_UNKNOWN5;
   EventMap[0xe5] = EVENT_UNKNOWN4;
   EventMap[0xe7] = EVENT_UNKNOWN1;
   EventMap[0xe8] = EVENT_PAN;
   EventMap[0xe9] = EVENT_UNKNOWN1;
-  EventMap[0xea] = EVENT_UNKNOWN3;
+  EventMap[0xea] = EVENT_PAN_FADE;  // guess, since 0xe2 is also fade
   EventMap[0xec] = EVENT_UNKNOWN5;
   EventMap[0xed] = EVENT_UNKNOWN4;
   EventMap[0xef] = EVENT_UNKNOWN1;
@@ -351,8 +351,7 @@ bool DSETrack::ReadEvent(void) {
       desc << L"Event: 0x" << std::hex << std::setfill(L'0') << std::setw(2) << std::uppercase
            << (int)statusByte << std::dec << std::setfill(L' ') << std::setw(0) << L"  Arg1: "
            << (int)arg1 << L"  Arg2: " << (int)arg2 << L"  Arg3: " << (int)arg3 << L"  Arg4: "
-           << (int)arg4 << L"  Arg5: "
-           << (int)arg5;
+           << (int)arg4 << L"  Arg5: " << (int)arg5;
       AddUnknown(beginOffset, curOffset - beginOffset, L"Unknown Event", desc.str());
       break;
     }
@@ -364,17 +363,17 @@ bool DSETrack::ReadEvent(void) {
       uint8_t octaveMod = (arg1 & 0x30) >> 4;
       uint8_t noteNumber = arg1 & 0x0f;
       uint8_t currOctave = octave;
-        if (octaveMod == 0x01) {
-          octave -= 1;
-        } else if (octaveMod == 0x02) {
-          octave -= 0;
-        } else if (octaveMod == 0x03) {
-          octave += 1;
-        } else if (octaveMod == 0x00) {
-          octave -= 2;
-        }
-        // for some reason, they use bigendian for note duration, but littleendian for rest
-        // wtf???
+      if (octaveMod == 0x01) {
+        octave -= 1;
+      } else if (octaveMod == 0x02) {
+        octave -= 0;
+      } else if (octaveMod == 0x03) {
+        octave += 1;
+      } else if (octaveMod == 0x00) {
+        octave -= 2;
+      }
+      // for some reason, they use bigendian for note duration, but littleendian for rest
+      // wtf???
       if (extraLength == 1) {
         spcNoteDuration = GetByte(curOffset++);
       } else if (extraLength == 2) {
@@ -386,15 +385,46 @@ bool DSETrack::ReadEvent(void) {
         curOffset++;
         spcNoteDuration += longHi;
       }
-        AddNoteByDur(beginOffset, curOffset - beginOffset, noteNumber + octave * 12, vel,
-                            spcNoteDuration);
-        //AddTime(spcNoteDuration);
+      AddNoteByDur(beginOffset, curOffset - beginOffset, noteNumber + octave * 12, vel,
+                   spcNoteDuration);
+      // AddTime(spcNoteDuration);
       break;
     }
+
+    case EVENT_SLUR: {
+      AddUnknown(beginOffset, curOffset - beginOffset, L"Slur (One-Time)?", desc.str());
+      break;
+  }
 
                    case EVENT_MODULATION: {
       uint8_t arg1 = GetByte(curOffset++);
                      AddModulation(beginOffset, curOffset - beginOffset, arg1, L"Modulation?");
+      break;
+    }
+
+case EVENT_PITCH_SLIDE: {
+      uint16_t len = GetShort(curOffset++);
+      curOffset++;
+      int8_t pitchSlideSemitones = GetByte(curOffset++);
+      desc << L"Length: " << (int)len << L"  Key: " << (int)pitchSlideSemitones << L" semitones";
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"Pitch Slide?", desc.str(),
+                      CLR_PITCHBEND);
+      break;
+    }
+
+                   case EVENT_VOLUME_FADE: {
+      uint16_t len = GetShort(curOffset++);
+      curOffset++;
+      uint8_t target = GetByte(curOffset++);
+      AddVolSlide(beginOffset, curOffset - beginOffset, len, target, L"Volume Slide?");
+      break;
+    }
+
+                                         case EVENT_PAN_FADE: {
+      uint16_t len = GetShort(curOffset++);
+      curOffset++;
+      uint8_t target = GetByte(curOffset++);
+      AddPanSlide(beginOffset, curOffset - beginOffset, len, target, L"Pan Slide?");
       break;
     }
 
