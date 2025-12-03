@@ -204,7 +204,7 @@ void DSESeq::LoadEventMap() {
   EventMap[0xbf] = EVENT_UNKNOWN1;
 
   EventMap[0xc0] = EVENT_UNKNOWN3;
-  EventMap[0xc3] = EVENT_UNKNOWN3;
+  EventMap[0xc3] = EVENT_UNKNOWN1;
   EventMap[0xcb] = EVENT_NOP2;
 
   EventMap[0xd0] = EVENT_UNKNOWN1;
