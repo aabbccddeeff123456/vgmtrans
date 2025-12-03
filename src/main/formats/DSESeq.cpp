@@ -380,7 +380,7 @@ bool DSETrack::ReadEvent(void) {
         spcNoteDuration = GetShortBE(curOffset++);
         curOffset++;
       } else if (extraLength == 3) {
-        uint8_t longHi = GetByte(curOffset++) * 0x100000;  // there no GetLong so...
+        uint32_t longHi = GetByte(curOffset++) * 0x100000;  // there no GetLong so...
         spcNoteDuration = GetShortBE(curOffset++);
         curOffset++;
         spcNoteDuration += longHi;
@@ -432,7 +432,7 @@ bool DSETrack::ReadEvent(void) {
     case EVENT_PAUSE24: {
       dur = GetShort(curOffset++);
       curOffset++;
-      uint8_t longHi = GetByte(curOffset++) * 0x100000;  // there no GetLong so...
+      uint32_t longHi = GetByte(curOffset++) * 0x100000;  // there no GetLong so...
       dur += longHi;
         AddRest(beginOffset, curOffset - beginOffset, dur);
       break;
