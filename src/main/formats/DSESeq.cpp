@@ -124,7 +124,8 @@ bool DSESeq::GetHeaderInfo(void) {
     songHeader->AddSimpleItem(songOffset + 0x15, 1, L"Number of Channels");
     songHeader->AddUnknownItem(songOffset + 0x16, 1);
     songHeader->AddUnknownItem(songOffset + 0x17, 1);
-    songHeader->AddUnknownItem(songOffset + 0x18, 2);
+    songHeader->AddUnknownItem(songOffset + 0x18, 1);
+    songHeader->AddUnknownItem(songOffset + 0x19, 1);
     songHeader->AddSimpleItem(songOffset + 0x1a, 1, L"Master Volume?");
     songHeader->AddSimpleItem(songOffset + 0x1b, 1, L"Master Pan?");
     songHeader->AddUnknownItem(songOffset + 0x1c, 4);
@@ -200,7 +201,7 @@ void DSESeq::LoadEventMap() {
   EventMap[0xb5] = EVENT_UNKNOWN1;
   EventMap[0xb6] = EVENT_UNKNOWN1;
   EventMap[0xbc] = EVENT_UNKNOWN1;
-  EventMap[0xbe] = EVENT_UNKNOWN1;
+  EventMap[0xbe] = EVENT_MODULATION;
   EventMap[0xbf] = EVENT_UNKNOWN1;
 
   EventMap[0xc0] = EVENT_UNKNOWN3;
@@ -385,16 +386,22 @@ bool DSETrack::ReadEvent(void) {
         curOffset++;
         spcNoteDuration += longHi;
       }
-        AddNoteByDur_Extend(beginOffset, curOffset - beginOffset, noteNumber + octave * 12, vel,
+        AddNoteByDur(beginOffset, curOffset - beginOffset, noteNumber + octave * 12, vel,
                             spcNoteDuration);
         //AddTime(spcNoteDuration);
       break;
     }
 
+                   case EVENT_MODULATION: {
+      uint8_t arg1 = GetByte(curOffset++);
+                     AddModulation(beginOffset, curOffset - beginOffset, arg1, L"Modulation?");
+      break;
+    }
+
       case EVENT_PITCH_BEND: {
-      int8_t bendhi = (signed) GetByte(curOffset++);  // 00-7f inc, 81-ff dec
-        uint8_t bendlo = GetByte(curOffset++);
-        AddPitchBend(beginOffset, curOffset - beginOffset, bendhi);
+      uint16_t bend = GetShortBE(curOffset++);  // 00-7f inc, 81-ff dec
+        curOffset++;
+        AddPitchBend(beginOffset, curOffset - beginOffset, bend);
         break;
       }
 
