@@ -48,6 +48,16 @@ BytePattern NinSnesScanner::ptnBranchForVcmdReadahead(
 	,
 	14);
 
+//8D 0F CD 0F F7 23 F0 04 D4 26 D4 70 DC 1D 10 F4
+BytePattern NinSnesScanner::ptnInitSectionPtrOcean(
+	"\x8d\x0f\xcd\x0f\xf7\x23\xf0\x04"
+  "\xd4\x26\xd4\x70\xdc\x1d\x10\xf4"
+	,
+	"x?x?x?x?"
+  "x?x?xxx?"
+	,
+	16);
+
 //; Yoshi's Island SPC
 //; dispatch vcmd in A (e0-ff)
 //0895: 1c        asl   a                 ; e0-ff => c0-fe (8 bit)
@@ -1284,8 +1294,13 @@ void NinSnesScanner::SearchForNinSnesFromARAM(RawFile *file) {
       version = NINSNES_FALCOM_YS4;
     }
     else {
-      // STANDARD VERSION
-      addrSongList = file->GetShort(ofsInitSectionPtr + 5);
+      uint32_t placeholder;
+      if (file->SearchBytePattern(ptnInitSectionPtrOcean, placeholder)) {
+        return; // this should fall back to OceanSnes, NinSnes cannot handle this correctly
+      } else {
+        // STANDARD VERSION
+        addrSongList = file->GetShort(ofsInitSectionPtr + 5);
+      }
 	}
   }
   else if (file->SearchBytePattern(ptnInitSectionPtrYI, ofsInitSectionPtr)) {

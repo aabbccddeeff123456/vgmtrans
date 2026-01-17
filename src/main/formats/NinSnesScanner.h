@@ -42,6 +42,7 @@ class NinSnesScanner:
   static BytePattern ptnIncSectionPtrVortex;
   static BytePattern ptnInitSectionPtrVortex;
   static BytePattern ptnInitSectionPtrHE4;
+  static BytePattern ptnInitSectionPtrOcean;
   static BytePattern ptnJumpToVcmdCTOW;
   static BytePattern ptnJumpToVcmdYSFR;
   static BytePattern ptnJumpToVcmdYs4;
