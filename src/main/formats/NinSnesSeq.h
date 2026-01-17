@@ -51,6 +51,8 @@ enum NinSnesSeqEventType {
   EVENT_FASTFORWARD_ON,
   EVENT_FASTFORWARD_OFF,
 
+  EVENT_ADSR,
+
   // Nintendo RD2:
       EVENT_RD2_PROGCHANGE_AND_ADSR,
 
@@ -87,6 +89,24 @@ enum NinSnesSeqEventType {
   // Quintet:
   EVENT_QUINTET_TUNING,
   EVENT_QUINTET_ADSR,
+
+  // Advance Communication Company:
+  EVENT_GAIN_ENVELOPE,
+  EVENT_ADSR1,
+  EVENT_ADSR2,
+  EVENT_SLUR_OFF,
+  EVENT_SLUR_ON,
+
+  // Vortex
+  EVENT_ADSR1_VORTEX,
+  EVENT_ADSR2_VORTEX,
+  EVENT_ECHO_FIR,
+  EVENT_GAIN,
+  EVENT_EC,
+  EVENT_PORTAMENTO_TIME,
+  EVENT_ECHO_FEEDBACK,
+  EVENT_VOLUME_FADE_DELAY,
+  EVENT_F0,
 };
 
 class NinSnesTrackSharedData {

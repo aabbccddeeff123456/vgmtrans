@@ -35,10 +35,12 @@ enum NinSnesVersion {
   NINSNES_FALCOM_YS4,         // Ys IV // In fact,the engine was made by Cube.
   NINSNES_MAKE_SOFTWARE,      // Make Software Games
   NINSNES_PRODUCE,            // The 7th Saga
-  NINSNES_OCEAN,              // Ocean Games
+// OCEAN need a new format
+// NINSNES_OCEAN,              // Ocean Games
   NINSNES_STING,              // Sting Games (Different Header)
 
-  NINSNES_ANTHROX,            // Anthrox Branch
+  NINSNES_ANTHROX,            // Vortex
+  NINSNES_ACC,                // Advance Communication Company
 };
 
 BEGIN_FORMAT(NinSnes)

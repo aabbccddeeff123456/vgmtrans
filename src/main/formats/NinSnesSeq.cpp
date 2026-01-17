@@ -277,6 +277,15 @@ void NinSnesSeq::LoadEventMap() {
       0x7a, 0x7c, 0x7d, 0x7e, 0x7f,
   };
 
+  const uint8_t NINSNES_DUR_TABLE_ANTHROX[8] = {
+      0x32, 0x65, 0x7f, 0x98, 0xb2, 0xcb, 0xe5, 0xfd,
+  };
+
+  const uint8_t NINSNES_VOL_TABLE_ANTHROX[16] = {
+      0x50, 0x64, 0x73, 0x84, 0x8E, 0x98, 0xA2, 0xAC,
+      0xB6, 0xC0, 0xCA, 0xD5, 0xE1, 0xE8, 0xF2, 0xFF
+  };
+
   const uint8_t NINSNES_VOL_TABLE_INTELLI[16] = {
       0x19, 0x32, 0x4c, 0x65, 0x72, 0x7f, 0x8c, 0x98,
       0xa5, 0xb2, 0xbf, 0xcb, 0xd8, 0xe5, 0xf2, 0xfc,
@@ -315,6 +324,22 @@ void NinSnesSeq::LoadEventMap() {
       STATUS_NOTE_MAX = 0xc5;
       STATUS_PERCUSSION_NOTE_MIN = 0xd0;
       STATUS_PERCUSSION_NOTE_MAX = 0xd9;
+      break;
+
+    case NINSNES_ACC:
+      STATUS_END = 0x00;
+      STATUS_NOTE_MIN = 0x80;
+      STATUS_NOTE_MAX = 0xc7;
+      STATUS_PERCUSSION_NOTE_MIN = 0xca;
+      STATUS_PERCUSSION_NOTE_MAX = 0xda;
+      break;
+
+    case NINSNES_ANTHROX:
+      STATUS_END = 0x00;
+      STATUS_NOTE_MIN = 0x80;
+      STATUS_NOTE_MAX = 0xc7;
+      STATUS_PERCUSSION_NOTE_MIN = 0xca;
+      STATUS_PERCUSSION_NOTE_MAX = 0xcd;
       break;
 
     default:
@@ -522,7 +547,21 @@ void NinSnesSeq::LoadEventMap() {
       break;
 
     case NINSNES_ANTHROX:
-      LoadStandardVcmdMap(0xca);
+      LoadStandardVcmdMap(0xce);
+      if (volumeTable.empty()) {
+        volumeTable.assign(std::begin(NINSNES_VOL_TABLE_ANTHROX),
+                           std::end(NINSNES_VOL_TABLE_ANTHROX));
+      }
+
+      if (durRateTable.empty()) {
+        durRateTable.assign(std::begin(NINSNES_DUR_TABLE_ANTHROX),
+                            std::end(NINSNES_DUR_TABLE_ANTHROX));
+      }
+
+      if (panTable.empty()) {
+        panTable.assign(std::begin(NINSNES_PAN_TABLE_STANDARD),
+                        std::end(NINSNES_PAN_TABLE_STANDARD));
+      }
       break;
 
     default: // NINSNES_STANDARD compatible versions
@@ -605,6 +644,28 @@ void NinSnesSeq::LoadEventMap() {
       EventMap[0xf4] = EVENT_QUINTET_TUNING;
       EventMap[0xff] = EVENT_QUINTET_ADSR;
 	  break;
+
+    case NINSNES_ACC:
+      EventMap[0xdb] = EVENT_GAIN_ENVELOPE;
+      EventMap[0xdc] = EVENT_ADSR1;
+      EventMap[0xdd] = EVENT_ADSR2;
+      EventMap[0xde] = EVENT_SLUR_ON;
+      EventMap[0xdf] = EVENT_SLUR_OFF;
+      break;
+
+    case NINSNES_ANTHROX:
+      EventMap[0xd9] = EVENT_ADSR1_VORTEX;
+      EventMap[0xda] = EVENT_ADSR2_VORTEX;
+      EventMap[0xe8] = EVENT_SLUR_ON;
+      EventMap[0xe9] = EVENT_GAIN;
+      EventMap[0xea] = EVENT_SLUR_ON;
+      EventMap[0xeb] = EVENT_SLUR_OFF;
+      EventMap[0xec] = EVENT_GAIN;
+      EventMap[0xed] = EVENT_PORTAMENTO_TIME;
+      EventMap[0xee] = EVENT_ECHO_FEEDBACK;
+      EventMap[0xef] = EVENT_VOLUME_FADE_DELAY;
+      EventMap[0xf0] = EVENT_UNKNOWN0;
+      break;
   }
 }
 
@@ -891,6 +952,107 @@ bool NinSnesTrack::ReadEvent(void) {
       break;
     }
 
+    case EVENT_SLUR_ON: {
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"Slur On",
+                      desc.str().c_str(), CLR_MISC, ICON_CONTROL);
+      break;
+    }
+
+    case EVENT_SLUR_OFF: {
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"Slur Off", desc.str().c_str(),
+                      CLR_MISC, ICON_CONTROL);
+      break;
+    }
+
+   case EVENT_ECHO_FIR: {
+      curOffset += 8; // FIR C0-C7
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"Echo FIR", desc.str().c_str(), CLR_REVERB, ICON_CONTROL);
+      break;
+    }
+
+     case EVENT_ECHO_FEEDBACK: {
+      uint8_t arg1 = GetByte(curOffset++);
+      desc << L"Feedback: "
+           << (int)arg1;
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"Echo Feedback", desc.str().c_str(),
+                      CLR_REVERB, ICON_CONTROL);
+      break;
+    }
+
+    case EVENT_PORTAMENTO_TIME: {
+        // TODO: calculate portamento time in milliseconds
+        uint8_t newPortamentoTime = GetByte(curOffset++);
+        desc << L"Time: " << (int) newPortamentoTime;
+        AddPortamentoTime(beginOffset, curOffset - beginOffset, newPortamentoTime);
+        break;
+      }
+
+    case EVENT_ADSR1: {
+      uint8_t arg1 = GetByte(curOffset++);
+      uint8_t arg2 = GetByte(curOffset++);
+      desc << L"Arg1: "
+           << (int)arg1 << L"  Arg2: " << (int)arg2;
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"ADSR1", desc.str().c_str(), CLR_MISC,
+                      ICON_CONTROL);
+      break;
+    }
+
+    case EVENT_ADSR2: {
+      uint8_t arg1 = GetByte(curOffset++);
+      uint8_t arg2 = GetByte(curOffset++);
+      desc << L"Arg1: " << (int)arg1 << L"  Arg2: " << (int)arg2;
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"ADSR2", desc.str().c_str(), CLR_MISC,
+                      ICON_CONTROL);
+      break;
+    }
+
+   case EVENT_ADSR1_VORTEX: {
+      uint8_t arg1 = GetByte(curOffset++);
+      desc << L"Arg1: "
+           << (int)arg1;
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"ADSR1", desc.str().c_str(), CLR_MISC,
+                      ICON_CONTROL);
+      break;
+    }
+
+    case EVENT_ADSR2_VORTEX: {
+      uint8_t arg1 = GetByte(curOffset++);
+      desc << L"Arg1: " << (int)arg1;
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"ADSR2", desc.str().c_str(), CLR_MISC,
+                      ICON_CONTROL);
+      break;
+    }
+
+    case EVENT_GAIN: {
+      uint8_t arg1 = GetByte(curOffset++);
+      desc << L"Arg1: "
+           << (int)arg1;
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"GAIN", desc.str().c_str(), CLR_MISC,
+                      ICON_CONTROL);
+      break;
+    }
+
+    case EVENT_GAIN_ENVELOPE: {
+      uint8_t arg1 = GetByte(curOffset++);
+      desc << L"Index: "
+           << (int)arg1;
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"Gain Envelope", desc.str().c_str(),
+                      CLR_MISC, ICON_CONTROL);
+      break;
+    }
+
+    case EVENT_ADSR: {
+      uint8_t arg1 = GetByte(curOffset++);
+      uint8_t arg2 = GetByte(curOffset++);
+      desc << L"ADSR1: " << std::hex << std::setfill(L'0') << std::setw(2) << std::uppercase
+           << (int)arg1 << std::dec << std::setfill(L' ') << std::setw(0) << L"ADSR2: " << std::hex
+           << std::setfill(L'0') << std::setw(2) << std::uppercase << (int)arg2 << std::dec
+           << std::setfill(L' ') << std::setw(0);
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"ADSR", desc.str().c_str(),
+                      CLR_MISC, ICON_CONTROL);
+      break;
+    }
+
     case EVENT_END: {
       // AddEvent is called at the last of this function
 
@@ -908,7 +1070,10 @@ bool NinSnesTrack::ReadEvent(void) {
           }
         }
 
-        parentSeq->InactivateAllTracks();
+        if (parentSeq->version != NINSNES_ANTHROX) {
+          // Shoot your Load
+          parentSeq->InactivateAllTracks();
+        }
         bContinue = false;
       }
       else {
@@ -1163,6 +1328,14 @@ bool NinSnesTrack::ReadEvent(void) {
       uint8_t fadeLength = GetByte(curOffset++);
       uint8_t newVol = GetByte(curOffset++);
       AddVolSlide(beginOffset, curOffset - beginOffset, fadeLength, newVol / 2);
+      break;
+    }
+
+    case EVENT_VOLUME_FADE_DELAY: {
+      uint8_t delay = GetByte(curOffset++);
+      uint8_t fadeLength = GetByte(curOffset++);
+      uint8_t newVol = GetByte(curOffset++);
+      AddVolSlide(beginOffset, curOffset - beginOffset, fadeLength, newVol / 2, L"Volume Slide (Delayed)");
       break;
     }
 

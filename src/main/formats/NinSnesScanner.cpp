@@ -212,6 +212,13 @@ BytePattern NinSnesScanner::ptnSetDIRYI(
 	,
 	7);
 
+BytePattern NinSnesScanner::ptnSetDIRVortex(
+	"\xe8\x15\x8d\x5d\xcb\xf2\xc4\xf3"
+	,
+	"x?xx?x?"
+	,
+	8);
+
 //; Super Mario World SPC
 //; default values for DSP regs
 //1295: db $7f,$7f,$00,$00,$2f,$60,$00,$00,$00,$80,$60,$02
@@ -319,6 +326,30 @@ BytePattern NinSnesScanner::ptnIncSectionPtrProduce(
   ,
   20);
 
+//  mov y,#$00
+//  mov $29,y
+//  mov $e0,y
+//  mov a,[$15]+y
+//  incw $15
+//  push a
+//  mov a,[$15]+y
+//  incw $15
+//  mov y,a
+//  pop a
+//  ret
+// 8D 00 CB 29 CB E0 F7 15 3A 15 2D F7 15 3A 15 FD
+// AE 6F
+BytePattern NinSnesScanner::ptnIncSectionPtrVortex(
+  "\x8d\x00\xcb\x29\xcb\xe0\xf7\x15"
+  "\x3a\x15\x2d\xf7\x15\x3a\x15\xfd"
+  "\xae\x6f"
+  ,
+  "x?x?x?x?"
+  "x?xx?x?x"
+  "xx"
+  ,
+  18);
+
 //1c 5d f5 01 18 fd f5 00 18 da 06 e8 00 c4 1a c4
 //1b
 BytePattern NinSnesScanner::ptnIncSectionPtrSting(
@@ -331,6 +362,34 @@ BytePattern NinSnesScanner::ptnIncSectionPtrSting(
   "?"
   ,
   17);
+
+//  mov a,$05
+//  mov $04,a
+//  asl a
+//  beq $095a
+//  dec a
+//  mov y,a
+//  mov a,#$00
+//  mov $e4,a
+//  mov $2d,a
+//  mov a,[$06]+y
+//  push a
+//  dec y
+//  mov a,[$06]+y
+//  pop y
+//  movw $15,ya
+BytePattern NinSnesScanner::ptnInitSectionPtrVortex(
+  "\xe4\x05\xc4\x04\x1c\xf0\x14\x9c"
+  "\xfd\xe8\x00\xc4\xe4\xc4\x2d\xf7"
+  "\x06\x2d\xdc\xf7\x06\xee\xda\x15",
+  "x?x?xx?x"
+  "xx?x?x?x"
+  "?xxx?xx?",
+  24);
+
+BytePattern NinSnesScanner::ptnReadSectionPtrVortex("\xe5\xdf\x06\xec\xe0\x06\xda\x06",
+                                                    "x??x??x?",
+                                                    8);
 
 //; Heracles no Eiko 4 SPC
 //09b4: 6d        push  y
@@ -410,8 +469,8 @@ BytePattern NinSnesScanner::ptnJumpToVcmdAnthrox(
   "\x1c\xfd\xf6\xdc\x10\x2d\xf6\xdb"
   "\x10\x2d\x6f"
   ,
-  "xxx??x"
-  "x??xx"
+  "xxx??xx?"
+  "?xx"
   ,
   11);
 
@@ -478,6 +537,12 @@ BytePattern NinSnesScanner::ptnReadVcmdLengthYs4(
 	"x??"
 	,
 	11);
+
+BytePattern NinSnesScanner::ptnReadVcmdLengthACC("\x68\xe0\x90\x0e\x6d\xfd\xae"
+                                                 "\x96\x17\x0c",
+                                                 "x?x?xxx"
+                                                 "x??",
+                                                 10);
 
 //; Gradius 3 SPC
 //09fe: 2d        push  a
@@ -1026,6 +1091,8 @@ void NinSnesScanner::SearchForNinSnesFromARAM(RawFile *file) {
   }
   else if (file->SearchBytePattern(ptnIncSectionPtrProduce, ofsIncSectionPtr)) {
     addrSectionPtr = file->GetByte(ofsIncSectionPtr + 1) + 0x10;  // Song Section Ptr at 0x29
+  } else if (file->SearchBytePattern(ptnIncSectionPtrVortex, ofsIncSectionPtr)) {
+    addrSectionPtr = file->GetByte(ofsIncSectionPtr + 7);  // Song Section Ptr at 0x29
   }
   else {
     return;
@@ -1269,6 +1336,11 @@ void NinSnesScanner::SearchForNinSnesFromARAM(RawFile *file) {
   }
   else if (file->SearchBytePattern(ptnInitSectionPtrProduce, ofsInitSectionPtr)) {
     addrSongList = file->GetShort(ofsInitSectionPtr + 3);
+  } else if (file->SearchBytePattern(ptnInitSectionPtrVortex, ofsInitSectionPtr)) {
+    if (file->SearchBytePattern(ptnReadSectionPtrVortex, ofsInitSectionPtr)) {
+      addrSongList = file->GetShort(file->GetShort(ofsInitSectionPtr + 1));
+      version = NINSNES_ANTHROX;
+    }
   }
   else {
     return;
@@ -1301,7 +1373,7 @@ void NinSnesScanner::SearchForNinSnesFromARAM(RawFile *file) {
       if (firstVoiceCmd == 0xe0) {
         version = NINSNES_TOSE;
       }
-    }
+    } 
     else {
       return;
     }
@@ -1313,7 +1385,11 @@ void NinSnesScanner::SearchForNinSnesFromARAM(RawFile *file) {
 	  if (file->SearchBytePattern(ptnReadVcmdLengthYs4, ofsReadVcmdLength)) {
 		  firstVoiceCmd = file->GetByte(ofsReadVcmdLength + 1);
 		  addrVoiceCmdLengthTable = file->GetShort(ofsReadVcmdLength + 9) + firstVoiceCmd;
-	  }
+    } else if (file->SearchBytePattern(ptnReadVcmdLengthACC, ofsReadVcmdLength)) {
+      firstVoiceCmd = file->GetByte(ofsReadVcmdLength + 1);
+      addrVoiceCmdLengthTable = file->GetShort(ofsReadVcmdLength + 8) + firstVoiceCmd;
+      version = NINSNES_ACC; // maybe false
+    }
 	  else {
 		  return;
 	  }
@@ -1568,6 +1644,8 @@ void NinSnesScanner::SearchForNinSnesFromARAM(RawFile *file) {
             addrVoiceCmdLengthTable,
             sizeof(INTELLI_ALT_VCMD_LEN_TABLE))) {
             version = NINSNES_STANDARD_WITH_FE3_COMMAND;
+          } else if (firstVoiceCmd == 0xce) {
+            version = NINSNES_ANTHROX;
           }
         }
       }
@@ -1729,7 +1807,10 @@ void NinSnesScanner::SearchForNinSnesFromARAM(RawFile *file) {
       guessedSongIndex = songIndexCandidate;
     }
   }
-
+  //if (version == NINSNES_ANTHROX) {
+    // VORTEX CASE
+  //  guessedSongIndex = 1;  // always
+  //}
   if (guessedSongIndex == 0xff) {
     return;
   }
@@ -1739,7 +1820,12 @@ void NinSnesScanner::SearchForNinSnesFromARAM(RawFile *file) {
   if (version == NINSNES_KONAMI) {
     addrSongStart += konamiBaseAddress;
   }
-
+  else if (version == NINSNES_ANTHROX) {
+    // VORTEX CASE
+    if (file->GetShort(addrSongStart) == 0x8e00) {
+      addrSongStart += 2;
+    }
+  }
   NinSnesSeq *newSeq = new NinSnesSeq(file, version, addrSongStart, 0, volumeTable, durRateTable, name);
   newSeq->konamiBaseAddress = konamiBaseAddress;
   newSeq->quintetBGMInstrBase = quintetBGMInstrBase;
@@ -1812,6 +1898,9 @@ void NinSnesScanner::SearchForNinSnesFromARAM(RawFile *file) {
       spcDirAddr = file->GetByte(ofsSetDIR + 3) << 8;
     }
     else if (file->SearchBytePattern(ptnSetDIRTS, ofsSetDIR)) {
+      spcDirAddr = file->GetByte(ofsSetDIR + 1) << 8;
+    }
+    else if (file->SearchBytePattern(ptnSetDIRVortex, ofsSetDIR)) {
       spcDirAddr = file->GetByte(ofsSetDIR + 1) << 8;
     }
     else {

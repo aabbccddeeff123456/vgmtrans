@@ -39,12 +39,15 @@ class NinSnesScanner:
   static BytePattern ptnIncSectionPtrYs4;
   static BytePattern ptnIncSectionPtrProduce;
   static BytePattern ptnIncSectionPtrSting;
+  static BytePattern ptnIncSectionPtrVortex;
+  static BytePattern ptnInitSectionPtrVortex;
   static BytePattern ptnInitSectionPtrHE4;
   static BytePattern ptnJumpToVcmdCTOW;
   static BytePattern ptnJumpToVcmdYSFR;
   static BytePattern ptnJumpToVcmdYs4;
   static BytePattern ptnReadVcmdLengthYSFR;
   static BytePattern ptnReadVcmdLengthYs4;
+  static BytePattern ptnReadVcmdLengthACC;
   static BytePattern ptnDispatchNoteGD3;
   static BytePattern ptnDispatchNoteYSFR;
   static BytePattern ptnDispatchNoteLEM;
@@ -65,4 +68,6 @@ class NinSnesScanner:
   static BytePattern ptnInstrVCmdACTR2;
   static BytePattern ptnInstrVCmdTS;
   static BytePattern ptnIntelliVCmdFA_EARLY;
+  static BytePattern ptnReadSectionPtrVortex;
+  static BytePattern ptnSetDIRVortex;
 };
