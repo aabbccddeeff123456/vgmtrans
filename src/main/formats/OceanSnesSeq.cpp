@@ -102,7 +102,7 @@ void OceanSnesSeq::LoadEventMap() {
       if (panTable.empty()) {
         panTable.assign(std::begin(OceanSNES_PAN_TABLE_STANDARD), std::end(OceanSNES_PAN_TABLE_STANDARD));
       }
-  for (statusByte = 0x01; statusByte < 0x7f; statusByte++) {
+  for (statusByte = 0x01; statusByte < 0x80; statusByte++) {
     EventMap[statusByte] = EVENT_NOTE_PARAM;
   }
 
@@ -141,9 +141,9 @@ void OceanSnesSeq::LoadEventMap() {
     EventMap[0xe4] = EVENT_UNKNOWN1;
     EventMap[0xe5] = EVENT_NOP;
     EventMap[0xe6] = EVENT_PROGCHANGE;
-    EventMap[0xe7] = EVENT_UNKNOWN4;
-    EventMap[0xe8] = EVENT_UNKNOWN0;
-    EventMap[0xe9] = EVENT_UNKNOWN0;
+    EventMap[0xe7] = EVENT_ADSR_GAIN;
+    EventMap[0xe8] = EVENT_INSTRUMENT_EFFECT_ON;
+    EventMap[0xe9] = EVENT_INSTRUMENT_EFFECT_OFF;
     EventMap[0xea] = EVENT_UNKNOWN1;
     EventMap[0xeb] = EVENT_UNKNOWN1;
     EventMap[0xec] = EVENT_UNKNOWN1;
@@ -161,7 +161,7 @@ void OceanSnesSeq::LoadEventMap() {
       if (panTable.empty()) {
         panTable.assign(std::begin(OceanSNES_PAN_TABLE_STANDARD), std::end(OceanSNES_PAN_TABLE_STANDARD));
       }
-  for (statusByte = 0x01; statusByte < 0x7f; statusByte++) {
+  for (statusByte = 0x01; statusByte < 0x80; statusByte++) {
     EventMap[statusByte] = EVENT_NOTE_PARAM;
   }
 
@@ -200,16 +200,16 @@ void OceanSnesSeq::LoadEventMap() {
     EventMap[0xfa] = EVENT_UNKNOWN1;
     EventMap[0xfb] = EVENT_NOP;
     EventMap[0xfc] = EVENT_PROGCHANGE;
-    EventMap[0xfd] = EVENT_UNKNOWN1;
-    EventMap[0xfe] = EVENT_UNKNOWN0;
-    EventMap[0xff] = EVENT_UNKNOWN0;
+    EventMap[0xfd] = EVENT_ADSR_GAIN;
+    EventMap[0xfe] = EVENT_INSTRUMENT_EFFECT_ON;
+    EventMap[0xff] = EVENT_INSTRUMENT_EFFECT_OFF;
   }
   // STANDALONE VER
   else if (version == OCEANSNES_STANDALONE) {
-    for (statusByte = 0x00; statusByte < 0x7f; statusByte++) {
+    for (statusByte = 0x00; statusByte < 0x80; statusByte++) {
     EventMap[statusByte] = EVENT_WAIT;
   }
-    for (statusByte = 0xf0; statusByte < 0xff; statusByte++) {
+    for (statusByte = 0xf0; statusByte <= 0xff; statusByte++) {
     EventMap[statusByte] = EVENT_VOL;
   }for (statusByte = 0xea; statusByte < 0xf0; statusByte++) {
     EventMap[statusByte] = EVENT_PROGCHANGE_ONEBYTE;
@@ -217,11 +217,11 @@ void OceanSnesSeq::LoadEventMap() {
     for (statusByte = 0x80; statusByte < 0xbe; statusByte++) {
     EventMap[statusByte] = EVENT_NOTE;
   }
-    EventMap[0xbe] = EVENT_UNKNOWN0;
-    EventMap[0xbf] = EVENT_KEY_OFF_TRIGGER; // ??
+    EventMap[0xbe] = EVENT_RELEASE_NOTE;
+    EventMap[0xbf] = EVENT_NOTE_ON; // ??
     EventMap[0xc0] = EVENT_PROGCHANGE; 
     EventMap[0xc1] = EVENT_PAN;
-    EventMap[0xc2] = EVENT_VOLUME;
+    EventMap[0xc2] = EVENT_VOLUME_REL;
     EventMap[0xc3] = EVENT_EXPRESSION;
     EventMap[0xc4] = EVENT_UNKNOWN1;
     EventMap[0xc5] = EVENT_UNKNOWN1;
@@ -327,6 +327,8 @@ void OceanSnesTrack::ResetVars(void) {
   spcNoteDurRate = 0xff;
   spcNoteVolume = 0xff;
 
+  prevDuration = 0;
+
   tick = GetByte(0x59);
 
   if (parentSeq->version == OCEANSNES_STANDALONE) {
@@ -347,6 +349,7 @@ bool OceanSnesTrack::ReadEvent(void) {
 
   uint8_t statusByte = GetByte(curOffset++);
   bool bContinue = true;
+
 
   std::wstringstream desc;
 
@@ -410,11 +413,45 @@ bool OceanSnesTrack::ReadEvent(void) {
       break;
     }
 
+    case EVENT_INSTRUMENT_EFFECT_ON: {
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"Per-Instrument Special Effect On", desc.str(), CLR_CHANGESTATE);
+      break;
+    }
+
+case EVENT_INSTRUMENT_EFFECT_OFF: {
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"Per-Instrument Special Effect Off", desc.str(), CLR_CHANGESTATE);
+      break;
+    }
+
+  case EVENT_ADSR_GAIN: {
+      uint8_t arg1 = GetByte(curOffset++);
+      uint8_t arg2 = GetByte(curOffset++);
+      uint8_t arg3 = GetByte(curOffset++);
+      desc << L"ADSR1: $" << std::hex << std::setfill(L'0') << std::setw(2) << std::uppercase << (int) arg1
+          << std::dec << std::setfill(L' ') << std::setw(0)
+          << L"  ADSR2: $" << std::hex << std::setfill(L'0') << std::setw(2) << std::uppercase << (int) arg2
+          << std::dec << std::setfill(L' ') << std::setw(0)
+          << L"  GAIN: $" << std::hex << std::setfill(L'0') << std::setw(2) << std::uppercase << (int) arg3
+          << std::dec << std::setfill(L' ') << std::setw(0);
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"ADSR & GAIN", desc.str(), CLR_MISC);
+      break;
+    }
+
 case EVENT_SLUR: {
       uint8_t arg1 = GetByte(curOffset++);
       desc 
           << L"Arg1: " << (int) arg1;
-      AddUnknown(beginOffset, curOffset - beginOffset, L"Slur?", desc.str());
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"Slur?", desc.str(), CLR_CHANGESTATE);
+      break;
+    }
+
+case EVENT_RELEASE_NOTE: {
+      AddNoteOffNoItem(prevKey);
+      if (GetByte(curOffset) <= 0x7f) {
+        prevDuration = GetByte(curOffset++);
+      }
+      AddTime(prevDuration);
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"Release Note", desc.str(), CLR_NOTEOFF);
       break;
     }
 
@@ -473,9 +510,8 @@ case EVENT_SLUR: {
       break;
     }
 
-    case EVENT_KEY_OFF_TRIGGER: {
-      keyOff = true;
-      AddGenericEvent(beginOffset, curOffset - beginOffset, L"Trigger Key-Off for next Note", desc.str().c_str(), CLR_CHANGESTATE);
+    case EVENT_NOTE_ON: {
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"Note On (Trigger Key-On)", desc.str().c_str(), CLR_DURNOTE);
       break;
     }
 
@@ -492,7 +528,21 @@ case EVENT_SLUR: {
 
     case EVENT_VOL: {
       uint8_t volume = (statusByte & 0x0f) * 0x10;
+      if (GetByte(curOffset) <= 0x7f) {
+        prevDuration = GetByte(curOffset++);
+      }
+      AddTime(prevDuration);
       AddVol(beginOffset, curOffset - beginOffset, volume);
+      break;
+    }
+
+   case EVENT_VOLUME_REL: {
+      vol += GetByte(curOffset++);
+      if (GetByte(curOffset) <= 0x7f) {
+        prevDuration = GetByte(curOffset++);
+      }
+      AddTime(prevDuration);
+      AddVol(beginOffset, curOffset - beginOffset, vol);
       break;
     }
 
@@ -651,11 +701,15 @@ case EVENT_EFFECT_DEPTH: {
                      L"Note");
         AddTime(spcNoteDuration);
       } else {
-        duration = prevDuration - keyOff;
-        AddNoteByDur(beginOffset, curOffset - beginOffset, noteNumber, spcNoteVolume / 2, duration,
+        //duration = prevDuration - keyOff;
+        AddNoteOffNoItem(prevKey);
+        
+        if (GetByte(curOffset) <= 0x7f) {
+        prevDuration = GetByte(curOffset++);
+      }
+      AddTime(prevDuration);
+      AddNoteOn(beginOffset, curOffset - beginOffset, noteNumber, spcNoteVolume / 2,
                      L"Note");
-        keyOff = false;
-        AddTime(prevDuration);
       }
       break;
     }
@@ -1013,7 +1067,7 @@ case EVENT_PITCH_FADE: {
       currentSection[channel]++;
       AddGenericEvent(beginOffset, curOffset - beginOffset, L"Section End", desc.str().c_str(), CLR_TRACKEND, ICON_CONTROL);
       if (parentSeq->version == OCEANSNES_NSPC || parentSeq->version == OCEANSNES_NSPC2) {
-        if (GetShort(parentSeq->sectionPointer[channel] + currentSection[channel] * 2) >= 0x1000) {
+        if (GetShort(parentSeq->sectionPointer[channel] + currentSection[channel] * 2) >= 0x1000 && GetShort(parentSeq->sectionPointer[channel] + currentSection[channel] * 2) <= 0xfff0) {
           curOffset = GetShort(parentSeq->sectionPointer[channel] + currentSection[channel] * 2);
         } else {
           bContinue = false;
