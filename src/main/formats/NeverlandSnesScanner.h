@@ -18,4 +18,7 @@ class NeverlandSnesScanner:
  private:
   static BytePattern ptnLoadSongSFC;
   static BytePattern ptnLoadSongS2C;
+  static BytePattern ptnLoadInstrS2C;
+  static BytePattern ptnLoadInstrSFC;
+  static BytePattern ptnLoadInstrEB;
 };
