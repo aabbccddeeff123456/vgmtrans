@@ -44,6 +44,21 @@ enum FalcomSnesSeqEventType {
   EVENT_ECHO_VOLUME,
   EVENT_ECHO_FIR_OVERWRITE,
   EVENT_GOTO,
+
+  EVENT_NOTE_PARAM,
+  EVENT_MASTER_VOLUME,
+  EVENT_LOOP,
+  EVENT_TREMOLO_ON,
+  EVENT_TREMOLO_OFF,
+  EVENT_NOP,
+  EVENT_VIBRATO_OFF,
+  EVENT_PITCH_ENVELOPE_TO,
+  EVENT_PITCH_ENVELOPE_FROM,
+  EVENT_PITCH_ENVELOPE_OFF,
+  EVENT_ECHO_ON,
+  EVENT_ECHO_OFF,
+  EVENT_PAN_NSPC,
+  EVENT_PAN_FADE,
 };
 
 class FalcomSnesSeq
@@ -52,7 +67,7 @@ class FalcomSnesSeq
   FalcomSnesSeq(RawFile *file,
                     FalcomSnesVersion ver,
                     uint32_t seqdata_offset,
-                    std::string newName = "Falcom SNES Seq");
+                    std::wstring newName = L"Falcom SNES Seq");
   virtual ~FalcomSnesSeq(void);
 
   virtual bool GetHeaderInfo(void);
@@ -65,6 +80,7 @@ class FalcomSnesSeq
   std::map<uint8_t, FalcomSnesSeqEventType> EventMap;
 
   std::vector<uint8_t> NoteDurTable;
+  std::vector<uint8_t> panTable;
 
   std::map<uint16_t, uint8_t> repeatCountMap;
   std::map<uint8_t, uint16_t> instrADSRHints;
@@ -84,6 +100,9 @@ class FalcomSnesTrack
   virtual bool ReadEvent(void);
 
   int8_t CalcPanValue(uint8_t pan, double &volumeScale);
+  void GetVolumeBalance(uint16_t pan, double &volumeLeft, double &volumeRight);
+  uint8_t ReadPanTable(uint16_t pan);
+  int8_t CalcPanValueNSPC(uint8_t pan, double &volumeScale, bool &reverseLeft, bool &reverseRight);
 
  private:
   int8_t prevNoteKey;
@@ -93,4 +112,7 @@ class FalcomSnesTrack
   uint16_t spcADSR;
   uint8_t spcVolume;
   uint8_t spcPan;
+  bool loopInited;
+  uint8_t loopCount[8]; // should be enough
+  uint8_t loopGroup;
 };

@@ -18,4 +18,5 @@ END_FORMAT()
 enum FalcomSnesVersion {
   FALCOMSNES_NONE = 0,  // Unknown Version
   FALCOMSNES_YS5,       // Ys V
+  FALCOMSNES_PM,        // Popful Mail
 };

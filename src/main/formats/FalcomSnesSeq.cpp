@@ -103,53 +103,93 @@ bool FalcomSnesSeq::GetTrackPointers(void) {
 
 void FalcomSnesSeq::LoadEventMap() {
   int statusByte;
+    const uint8_t NINSNES_PAN_TABLE_STANDARD[21] = {
+      0x00, 0x01, 0x03, 0x07, 0x0d, 0x15, 0x1e, 0x29,
+      0x34, 0x42, 0x51, 0x5e, 0x67, 0x6e, 0x73, 0x77,
+      0x7a, 0x7c, 0x7d, 0x7e, 0x7f,
+  };
+  if (version == FALCOMSNES_YS5) {
+    for (statusByte = 0x00; statusByte <= 0xcf; statusByte++) {
+      EventMap[statusByte] = EVENT_NOTE;
+    }
 
-  for (statusByte = 0x00; statusByte <= 0xcf; statusByte++) {
-    EventMap[statusByte] = EVENT_NOTE;
+    for (statusByte = 0xd0; statusByte <= 0xd6; statusByte++) {
+      EventMap[statusByte] = EVENT_OCTAVE;
+    }
+
+    EventMap[0xd7] = EVENT_TEMPO;
+    EventMap[0xd8] = EVENT_PROGCHANGE;
+    EventMap[0xd9] = EVENT_VIBRATO;
+    EventMap[0xda] = EVENT_VIBRATO_ON_OFF;
+    EventMap[0xdb] = EVENT_NOP3;
+    EventMap[0xdc] = EVENT_NOP1;
+    EventMap[0xdd] = EVENT_QUANTIZE;
+    EventMap[0xde] = EVENT_VOLUME;
+    EventMap[0xdf] = EVENT_VOLUME_DEC;
+    EventMap[0xe0] = EVENT_VOLUME_DEC;
+    EventMap[0xe1] = EVENT_VOLUME_DEC;
+    EventMap[0xe2] = EVENT_VOLUME_DEC;
+    EventMap[0xe3] = EVENT_VOLUME_INC;
+    EventMap[0xe4] = EVENT_VOLUME_INC;
+    EventMap[0xe5] = EVENT_VOLUME_INC;
+    EventMap[0xe6] = EVENT_VOLUME_INC;
+    EventMap[0xe7] = EVENT_PAN;
+    EventMap[0xe8] = EVENT_PAN_DEC;
+    EventMap[0xe9] = EVENT_PAN_INC;
+    EventMap[0xea] = EVENT_PAN_LFO;
+    EventMap[0xeb] = EVENT_PAN_LFO_ON_OFF;
+    EventMap[0xec] = EVENT_TUNING;
+    EventMap[0xed] = EVENT_LOOP_START;
+    EventMap[0xee] = EVENT_LOOP_BREAK;
+    EventMap[0xef] = EVENT_LOOP_END;
+    EventMap[0xf0] = EVENT_PITCH_ENVELOPE;
+    EventMap[0xf1] = EVENT_PITCH_ENVELOPE_ON_OFF;
+    EventMap[0xf2] = EVENT_ADSR;
+    EventMap[0xf3] = EVENT_GAIN;
+    EventMap[0xf4] = EVENT_NOISE_FREQ;
+    EventMap[0xf5] = EVENT_PITCHMOD;
+    EventMap[0xf6] = EVENT_ECHO;
+    EventMap[0xf7] = EVENT_ECHO_PARAM;
+    EventMap[0xf8] = EVENT_ECHO_VOLUME_ON_OFF;
+    EventMap[0xf9] = EVENT_ECHO_VOLUME;
+    EventMap[0xfa] = EVENT_ECHO_FIR_OVERWRITE;
+    EventMap[0xfb] = EVENT_NOP1;
+    EventMap[0xfc] = EVENT_GOTO;
+  } else {
+    if (panTable.empty()) {
+        panTable.assign(std::begin(NINSNES_PAN_TABLE_STANDARD), std::end(NINSNES_PAN_TABLE_STANDARD));
+      }
+    for (statusByte = 0x00; statusByte < 0xe0; statusByte++) {
+    EventMap[statusByte] = EVENT_NOTE_PARAM;
   }
-
-  for (statusByte = 0xd0; statusByte <= 0xd6; statusByte++) {
-    EventMap[statusByte] = EVENT_OCTAVE;
+    EventMap[0xe0] = EVENT_PROGCHANGE;
+    EventMap[0xe1] = EVENT_VOLUME;
+    EventMap[0xe2] = EVENT_UNKNOWN1;
+    EventMap[0xe3] = EVENT_TUNING;
+    EventMap[0xe4] = EVENT_NOISE_FREQ;
+    EventMap[0xe5] = EVENT_TEMPO;
+    EventMap[0xe6] = EVENT_LOOP;
+    EventMap[0xe7] = EVENT_TREMOLO_ON;
+    EventMap[0xe8] = EVENT_TREMOLO_OFF;
+    EventMap[0xe9] = EVENT_NOP;
+    EventMap[0xea] = EVENT_MASTER_VOLUME;
+    EventMap[0xeb] = EVENT_VOLUME_DEC;
+    EventMap[0xec] = EVENT_VOLUME_INC;
+    EventMap[0xed] = EVENT_LOOP_BREAK;
+    EventMap[0xee] = EVENT_NOP;
+    EventMap[0xef] = EVENT_GOTO;
+    EventMap[0xf0] = EVENT_VIBRATO;
+    EventMap[0xf1] = EVENT_VIBRATO_OFF;
+    EventMap[0xf2] = EVENT_PITCH_ENVELOPE_TO;
+    EventMap[0xf3] = EVENT_PITCH_ENVELOPE_FROM;
+    EventMap[0xf4] = EVENT_PITCH_ENVELOPE_OFF;
+    EventMap[0xf5] = EVENT_NOP1;
+    EventMap[0xf6] = EVENT_ECHO_ON;
+    EventMap[0xf7] = EVENT_ECHO_PARAM;
+    EventMap[0xf8] = EVENT_ECHO_OFF;
+    EventMap[0xf9] = EVENT_PAN_NSPC;
+    EventMap[0xfa] = EVENT_PAN_FADE;
   }
-
-  EventMap[0xd7] = EVENT_TEMPO;
-  EventMap[0xd8] = EVENT_PROGCHANGE;
-  EventMap[0xd9] = EVENT_VIBRATO;
-  EventMap[0xda] = EVENT_VIBRATO_ON_OFF;
-  EventMap[0xdb] = EVENT_NOP3;
-  EventMap[0xdc] = EVENT_NOP1;
-  EventMap[0xdd] = EVENT_QUANTIZE;
-  EventMap[0xde] = EVENT_VOLUME;
-  EventMap[0xdf] = EVENT_VOLUME_DEC;
-  EventMap[0xe0] = EVENT_VOLUME_DEC;
-  EventMap[0xe1] = EVENT_VOLUME_DEC;
-  EventMap[0xe2] = EVENT_VOLUME_DEC;
-  EventMap[0xe3] = EVENT_VOLUME_INC;
-  EventMap[0xe4] = EVENT_VOLUME_INC;
-  EventMap[0xe5] = EVENT_VOLUME_INC;
-  EventMap[0xe6] = EVENT_VOLUME_INC;
-  EventMap[0xe7] = EVENT_PAN;
-  EventMap[0xe8] = EVENT_PAN_DEC;
-  EventMap[0xe9] = EVENT_PAN_INC;
-  EventMap[0xea] = EVENT_PAN_LFO;
-  EventMap[0xeb] = EVENT_PAN_LFO_ON_OFF;
-  EventMap[0xec] = EVENT_TUNING;
-  EventMap[0xed] = EVENT_LOOP_START;
-  EventMap[0xee] = EVENT_LOOP_BREAK;
-  EventMap[0xef] = EVENT_LOOP_END;
-  EventMap[0xf0] = EVENT_PITCH_ENVELOPE;
-  EventMap[0xf1] = EVENT_PITCH_ENVELOPE_ON_OFF;
-  EventMap[0xf2] = EVENT_ADSR;
-  EventMap[0xf3] = EVENT_GAIN;
-  EventMap[0xf4] = EVENT_NOISE_FREQ;
-  EventMap[0xf5] = EVENT_PITCHMOD;
-  EventMap[0xf6] = EVENT_ECHO;
-  EventMap[0xf7] = EVENT_ECHO_PARAM;
-  EventMap[0xf8] = EVENT_ECHO_VOLUME_ON_OFF;
-  EventMap[0xf9] = EVENT_ECHO_VOLUME;
-  EventMap[0xfa] = EVENT_ECHO_FIR_OVERWRITE;
-  EventMap[0xfb] = EVENT_NOP1;
-  EventMap[0xfc] = EVENT_GOTO;
 }
 
 double FalcomSnesSeq::GetTempoInBPM(uint8_t tempo) {
@@ -187,6 +227,10 @@ void FalcomSnesTrack::ResetVars(void) {
   spcADSR = 0;
   spcVolume = 0;
   spcPan = 0x40;
+  for (uint8_t i = 0; i < 8; i++) {
+    loopCount[i] = 0;
+  }
+  loopGroup = 0;
 }
 
 int8_t FalcomSnesTrack::CalcPanValue(uint8_t pan, double &volumeScale) {
@@ -276,12 +320,165 @@ bool FalcomSnesTrack::ReadEvent(void) {
       break;
     }
 
+    case EVENT_PAN_NSPC: {
+      uint8_t newPan = GetByte(curOffset++);
+
+      double volumeScale;
+      bool reverseLeft;
+      bool reverseRight;
+      int8_t midiPan = CalcPanValueNSPC(newPan, volumeScale, reverseLeft, reverseRight);
+      AddPan(beginOffset, curOffset - beginOffset, midiPan);
+      AddExpressionNoItem(ConvertPercentAmpToStdMidiVal(volumeScale));
+      break;
+    }
+
+    case EVENT_PAN_FADE: {
+      uint8_t fadeLength = GetByte(curOffset++);
+      uint8_t newPan = GetByte(curOffset++);
+
+      double volumeLeft;
+      double volumeRight;
+      GetVolumeBalance(newPan << 8, volumeLeft, volumeRight);
+
+      uint8_t midiPan = ConvertVolumeBalanceToStdMidiPan(volumeLeft, volumeRight);
+
+      // TODO: fade in real curve
+      // TODO: apply volume scale
+      AddPanSlide(beginOffset, curOffset - beginOffset, fadeLength, midiPan);
+      break;
+    }
+
+    case EVENT_ECHO_OFF: {
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"Echo Off", desc.str().c_str(), CLR_REVERB, ICON_CONTROL);
+      break;
+    }
+
+    case EVENT_PITCH_ENVELOPE_TO: {
+      uint8_t pitchEnvDelay = GetByte(curOffset++);
+      uint8_t pitchEnvLength = GetByte(curOffset++);
+      int8_t pitchEnvSemitones = (int8_t) GetByte(curOffset++);
+
+      desc << L"Delay: " << (int) pitchEnvDelay << L"  Length: " << (int) pitchEnvLength << L"  Semitones: "
+          << (int) pitchEnvSemitones;
+      AddGenericEvent(beginOffset,
+                      curOffset - beginOffset,
+                      L"Pitch Envelope (To)",
+                      desc.str().c_str(),
+                      CLR_PITCHBEND,
+                      ICON_CONTROL);
+      break;
+    }
+
+    case EVENT_PITCH_ENVELOPE_FROM: {
+      uint8_t pitchEnvDelay = GetByte(curOffset++);
+      uint8_t pitchEnvLength = GetByte(curOffset++);
+      int8_t pitchEnvSemitones = (int8_t) GetByte(curOffset++);
+
+      desc << L"Delay: " << (int) pitchEnvDelay << L"  Length: " << (int) pitchEnvLength << L"  Semitones: "
+          << (int) pitchEnvSemitones;
+      AddGenericEvent(beginOffset,
+                      curOffset - beginOffset,
+                      L"Pitch Envelope (From)",
+                      desc.str().c_str(),
+                      CLR_PITCHBEND,
+                      ICON_CONTROL);
+      break;
+    }
+
+    case EVENT_PITCH_ENVELOPE_OFF: {
+      AddGenericEvent(beginOffset,
+                      curOffset - beginOffset,
+                      L"Pitch Envelope Off",
+                      desc.str().c_str(),
+                      CLR_PITCHBEND,
+                      ICON_CONTROL);
+      break;
+    }
+
+    case EVENT_TREMOLO_ON: {
+      uint8_t tremoloDelay = GetByte(curOffset++);
+      uint8_t tremoloRate = GetByte(curOffset++);
+      uint8_t tremoloDepth = GetByte(curOffset++);
+
+      desc << L"Delay: " << (int) tremoloDelay << L"  Rate: " << (int) tremoloRate << L"  Depth: "
+          << (int) tremoloDepth;
+      AddGenericEvent(beginOffset,
+                      curOffset - beginOffset,
+                      L"Tremolo",
+                      desc.str().c_str(),
+                      CLR_MODULATION,
+                      ICON_CONTROL);
+      break;
+    }
+
+    case EVENT_TREMOLO_OFF: {
+      AddGenericEvent(beginOffset,
+                      curOffset - beginOffset,
+                      L"Tremolo Off",
+                      desc.str().c_str(),
+                      CLR_MODULATION,
+                      ICON_CONTROL);
+      break;
+    }
+
+    case EVENT_MASTER_VOLUME: {
+      uint8_t newVol = GetByte(curOffset++);
+      AddMasterVol(beginOffset, curOffset - beginOffset, newVol / 2);
+      break;
+    }
+
     case EVENT_NOP1: {
       uint8_t arg1 = GetByte(curOffset++);
       desc << L"Event: 0x" << std::hex << std::setfill(L'0') << std::setw(2) << std::uppercase << (int) statusByte
           << std::dec << std::setfill(L' ') << std::setw(0)
           << L"  Arg1: " << (int) arg1;
       AddGenericEvent(beginOffset, curOffset - beginOffset, L"NOP.1", desc.str(), CLR_MISC, ICON_BINARY);
+      break;
+    }
+
+    case EVENT_NOP: {
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"NOP", desc.str(), CLR_MISC, ICON_BINARY);
+      break;
+    }
+
+   case EVENT_NOTE_PARAM: {
+      uint8_t len = statusByte & 0x7f;
+     bool noKeyoff;
+     if (statusByte <= 0x7f) {
+       uint8_t key = GetByte(curOffset++);
+       if (key <= 0x7f) {
+         noKeyoff = false;
+       }
+         else {
+         key &= 0x7f;
+         noKeyoff = true;
+       }
+     uint8_t dur;
+      if (noKeyoff) {
+        // slur/tie = full-length
+        dur = len;
+      }
+      else {
+        dur = len - 1;
+      }
+
+        if (prevNoteSlurred && key == prevNoteKey) {
+          // tie
+          MakePrevDurNoteEnd(GetTime() + dur);
+          desc << L"Duration: " << (int)len;
+          AddGenericEvent(beginOffset, curOffset - beginOffset, L"Tie", desc.str().c_str(), CLR_TIE, ICON_NOTE);
+        }
+        else {
+          // note
+          AddNoteByDur(beginOffset, curOffset - beginOffset, key, vel, dur);
+          prevNoteKey = key;
+        }
+       AddTime(len);
+       prevNoteSlurred = noKeyoff;
+     } else {
+       AddRest(beginOffset, curOffset - beginOffset, len);
+       prevNoteSlurred = false;
+     }
       break;
     }
 
@@ -382,6 +579,11 @@ bool FalcomSnesTrack::ReadEvent(void) {
       break;
     }
 
+    case EVENT_VIBRATO_OFF: {
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"Vibrato Off", desc.str().c_str(), CLR_MODULATION, ICON_CONTROL);
+      break;
+    }
+
     case EVENT_VIBRATO_ON_OFF: {
       bool vibratoOn = GetByte(curOffset++) != 0;
 
@@ -410,24 +612,35 @@ bool FalcomSnesTrack::ReadEvent(void) {
     }
 
     case EVENT_VOLUME_DEC: {
-      uint8_t amounts[] = { 8, 1, 2, 4 };
-      uint8_t amount = amounts[statusByte - 0xdf];
-
-      desc << L"Decrease Volume by : " << amount;
-      AddGenericEvent(beginOffset, curOffset - beginOffset, desc.str(), L"", CLR_VOLUME, ICON_CONTROL);
-
-      // add MIDI events only if updated
-      uint8_t newVolume = (uint8_t)max((int8_t)spcVolume - amount, 0);
-      if (newVolume != spcVolume) {
-        spcVolume = newVolume;
-        AddVolNoItem(spcVolume);
+        uint8_t amounts[] = {8, 1, 2, 4};
+        uint8_t amount;
+        if (parentSeq->version == FALCOMSNES_YS5) {
+        amount = amounts[statusByte - 0xe3];
+      } else {
+        amount = 0x0a;
       }
+
+        desc << L"Decrease Volume by : " << amount;
+        AddGenericEvent(beginOffset, curOffset - beginOffset, desc.str(), L"", CLR_VOLUME,
+                        ICON_CONTROL);
+
+        // add MIDI events only if updated
+        uint8_t newVolume = (uint8_t)max((int8_t)spcVolume - amount, 0);
+        if (newVolume != spcVolume) {
+          spcVolume = newVolume;
+          AddVolNoItem(spcVolume);
+        }
       break;
     }
 
     case EVENT_VOLUME_INC: {
       uint8_t amounts[] = { 8, 1, 2, 4 };
-      uint8_t amount = amounts[statusByte - 0xe3];
+      uint8_t amount;
+      if (parentSeq->version == FALCOMSNES_YS5) {
+        amount = amounts[statusByte - 0xe3];
+      } else {
+        amount = 0x0a;
+      }
 
       desc << L"Increase Volume by : " << amount;
       AddGenericEvent(beginOffset, curOffset - beginOffset, desc.str(), L"", CLR_VOLUME, ICON_CONTROL);
@@ -533,24 +746,50 @@ bool FalcomSnesTrack::ReadEvent(void) {
     }
 
     case EVENT_LOOP_BREAK: {
-      int16_t destOffset = GetShort(curOffset);
-      curOffset += 2;
-      uint16_t dest = curOffset + destOffset;
-      int16_t repeatCountOffset = GetShort(dest - 2);
-      uint16_t repeatCountAddr = dest + repeatCountOffset;
-      desc << "Destination: $" << std::hex << std::setfill(L'0') << std::setw(4) << std::uppercase << (int) dest <<
-              "Loop Count Address: $" << std::hex << std::setfill(L'0') << std::setw(4) << std::uppercase << (int) repeatCountAddr;
-      AddGenericEvent(beginOffset, curOffset - beginOffset, L"Loop Break", desc.str().c_str(), CLR_LOOP, ICON_ENDREP);
+      if (parentSeq->version == FALCOMSNES_YS5) {
+        int16_t destOffset = GetShort(curOffset);
+        curOffset += 2;
+        uint16_t dest = curOffset + destOffset;
+        int16_t repeatCountOffset = GetShort(dest - 2);
+        uint16_t repeatCountAddr = dest + repeatCountOffset;
+        desc << "Destination: $" << std::hex << std::setfill(L'0') << std::setw(4) << std::uppercase
+             << (int)dest << "Loop Count Address: $" << std::hex << std::setfill(L'0')
+             << std::setw(4) << std::uppercase << (int)repeatCountAddr;
+        AddGenericEvent(beginOffset, curOffset - beginOffset, L"Loop Break", desc.str().c_str(),
+                        CLR_LOOP, ICON_ENDREP);
 
-      if (parentSeq->repeatCountMap.count(repeatCountAddr) == 0) {
-        bContinue = false;
-        break;
+        if (parentSeq->repeatCountMap.count(repeatCountAddr) == 0) {
+          bContinue = false;
+          break;
+        }
+
+        if (parentSeq->repeatCountMap[repeatCountAddr] == 1) {
+          curOffset = dest;
+        }
+      } else {
+        uint16_t repeatCountAddr = GetShort(curOffset) + curOffset + 4;
+        curOffset += 2;
+        uint16_t dest = repeatCountAddr + 3;
+        desc << "Destination: $" << std::hex << std::setfill(L'0') << std::setw(4) << std::uppercase
+             << (int)dest << "  Loop Count Address: $" << std::hex << std::setfill(L'0')
+             << std::setw(4) << std::uppercase << (int)repeatCountAddr;
+        AddGenericEvent(beginOffset, curOffset - beginOffset, L"Loop Break", desc.str().c_str(),
+                        CLR_LOOP, ICON_ENDREP);
+
+        /*
+        The following have a lot of problem that cannot be fixed easily
+        if (loopInited == true) {
+          if (parentSeq->repeatCountMap.count(repeatCountAddr) == 0) {
+            bContinue = false;
+            break;
+          }
+
+          if (parentSeq->repeatCountMap[repeatCountAddr] == 1) {
+            curOffset = dest;
+          }
+        }
+        */
       }
-
-      if (parentSeq->repeatCountMap[repeatCountAddr] == 1) {
-        curOffset = dest;
-      }
-
       break;
     }
 
@@ -573,6 +812,35 @@ bool FalcomSnesTrack::ReadEvent(void) {
         curOffset = dest;
       }
 
+      break;
+    }
+
+    case EVENT_LOOP: {
+      uint8_t count = GetByte(curOffset++);
+      uint16_t repeatCountAddr = curOffset++;
+      int16_t destOffset = GetShort(curOffset) + (curOffset - 2);
+      curOffset += 2;
+      uint16_t dest = destOffset;
+      desc << L"Loop Count: " << (int)count << "  Destination: $" << std::hex << std::setfill(L'0')
+           << std::setw(4) << std::uppercase << (int)dest;
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"Loop", desc.str().c_str(), CLR_LOOP,
+                      ICON_ENDREP);
+
+      /*
+      The following have a lot of problem that cannot be fixed easily
+      reason: nested loop
+      parentSeq->repeatCountMap[repeatCountAddr] = count;
+      if (parentSeq->repeatCountMap.count(repeatCountAddr) == 0) {
+        bContinue = false;
+        break;
+      }
+
+      parentSeq->repeatCountMap[repeatCountAddr]--;
+      if (parentSeq->repeatCountMap[repeatCountAddr] != 0) {
+        // repeat again
+        curOffset = dest;
+      }
+      */
       break;
     }
 
@@ -658,6 +926,28 @@ bool FalcomSnesTrack::ReadEvent(void) {
       break;
     }
 
+    case EVENT_ECHO_ON: {
+      uint8_t spcEON = GetByte(curOffset++);
+      uint8_t spcEVOL_L = GetByte(curOffset++);
+      uint8_t spcEVOL_R = GetByte(curOffset++);
+
+      desc << L"Channels: ";
+      for (int channelNo = MAX_TRACKS - 1; channelNo >= 0; channelNo--) {
+        if ((spcEON & (1 << channelNo)) != 0) {
+          desc << (int) channelNo;
+          parentSeq->aTracks[channelNo]->AddReverbNoItem(40);
+        }
+        else {
+          desc << L"-";
+          parentSeq->aTracks[channelNo]->AddReverbNoItem(0);
+        }
+      }
+
+      desc << L"  Volume Left: " << (int) spcEVOL_L << L"  Volume Right: " << (int) spcEVOL_R;
+      AddGenericEvent(beginOffset, curOffset - beginOffset, L"Echo", desc.str().c_str(), CLR_REVERB, ICON_CONTROL);
+      break;
+    }
+
     case EVENT_ECHO_VOLUME: {
       int8_t echoVolumeLeft = GetByte(curOffset++);
       int8_t echoVolumeRight = GetByte(curOffset++);
@@ -713,4 +1003,63 @@ bool FalcomSnesTrack::ReadEvent(void) {
   //OutputDebugString(ssTrace.str().c_str());
 
   return bContinue;
+}
+
+void FalcomSnesTrack::GetVolumeBalance(uint16_t pan, double &volumeLeft, double &volumeRight) {
+  FalcomSnesSeq *parentSeq = (FalcomSnesSeq *) this->parentSeq;
+
+  uint8_t panIndex = pan >> 8;
+    uint8_t panMaxIndex = (uint8_t) (parentSeq->panTable.size() - 1);
+    if (panIndex > panMaxIndex) {
+      // unexpected behavior
+      pan = panMaxIndex << 8;
+      panIndex = panMaxIndex;
+    }
+
+    // actual engine divides pan by 256, though pan value is 7-bit
+    // by the way, note that it is right-to-left pan
+    volumeRight = ReadPanTable((panMaxIndex << 8) - pan) / 128.0;
+    volumeLeft = ReadPanTable(pan) / 128.0;
+}
+
+uint8_t FalcomSnesTrack::ReadPanTable(uint16_t pan) {
+  FalcomSnesSeq *parentSeq = (FalcomSnesSeq *) this->parentSeq;
+
+  uint8_t panIndex = pan >> 8;
+  uint8_t panFraction = pan & 0xff;
+
+  uint8_t panMaxIndex = (uint8_t) (parentSeq->panTable.size() - 1);
+  if (panIndex > panMaxIndex) {
+    // unexpected behavior
+    panIndex = panMaxIndex;
+    panFraction = 0; // floor(pan)
+  }
+
+  uint8_t volumeRate = parentSeq->panTable[panIndex];
+
+  // linear interpolation for pan fade
+  uint8_t nextVolumeRate = (panIndex < panMaxIndex) ? parentSeq->panTable[panIndex + 1] : volumeRate;
+  uint8_t volumeRateDelta = nextVolumeRate - volumeRate;
+  volumeRate += (volumeRateDelta * panFraction) >> 8;
+
+  return volumeRate;
+}
+
+int8_t FalcomSnesTrack::CalcPanValueNSPC(uint8_t pan, double &volumeScale, bool &reverseLeft, bool &reverseRight) {
+  FalcomSnesSeq *parentSeq = (FalcomSnesSeq *) this->parentSeq;
+
+  uint8_t panIndex;
+    panIndex = pan & 0x1f;
+    reverseLeft = (pan & 0x80) != 0;
+    reverseRight = (pan & 0x40) != 0;
+
+  double volumeLeft;
+  double volumeRight;
+  GetVolumeBalance(panIndex << 8, volumeLeft, volumeRight);
+
+  // TODO: correct volume scale of TOSE sequence
+  int8_t midiPan = ConvertVolumeBalanceToStdMidiPan(volumeLeft, volumeRight, &volumeScale);
+  volumeScale = min(volumeScale, 1.0); // workaround
+
+  return midiPan;
 }

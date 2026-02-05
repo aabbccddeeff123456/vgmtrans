@@ -6,7 +6,7 @@ class FalcomSnesScanner:
     public VGMScanner {
  public:
   FalcomSnesScanner(void) {
-    USE_EXTENSION("spc");
+    USE_EXTENSION(L"spc");
   }
   virtual ~FalcomSnesScanner(void) {
   }
@@ -19,4 +19,7 @@ class FalcomSnesScanner:
   static BytePattern ptnLoadSeq;
   static BytePattern ptnSetDIR;
   static BytePattern ptnLoadInstr;
+  static BytePattern ptnLoadSeqPM;
+  static BytePattern ptnSetDIRPM;
+  static BytePattern ptnLoadInstrPM;
 };

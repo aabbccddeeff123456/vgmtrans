@@ -34,12 +34,47 @@ BytePattern FalcomSnesScanner::ptnLoadSeq(
 	,
 	32);
 
+//0cba: f6 00 1c  mov   a,$1c00+y
+//0cbd: d5 78 01  mov   $0178+x,a         ; load voice address (lo)
+//0cc0: fc        inc   y
+//0cc1: f6 00 1c  mov   a,$1c00+y
+//0cc4: 60        clrc
+//0cc5: 88 1c     adc   a,#$1c            ; convert offset to address (base 0x1c00)
+//0cc7: d5 82 01  mov   $0182+x,a         ; load voice address (hi)
+//0cca: fc        inc   y
+//0ccb: 3f ae 0e  call  $0eae
+//0cce: 3d        inc   x
+//0ccf: c8 0a     cmp   x,#$0a
+//0cd1: 90 e0     bcc   $0cb3
+BytePattern FalcomSnesScanner::ptnLoadSeqPM(
+	"\xf6\x00\x1c\xd5\x78\x01\xfc\xf6"
+  "\x00\x1c\x60\x88\x1c\xd5\x82\x01"
+  "\xfc\x3f\xae\x0e\x3d\xc8\x0a\x90"
+  "\xe0"
+	,
+	"x??x??xx"
+  "??xx?x??"
+  "xx??xx?x"
+  "?"
+	,
+	25);
+
 //; Ys V: Ushinawareta Suna no Miyako Kefin SPC
 //0b2c: e8 1b     mov   a,#$1b
 //0b2e: 8f 5d f2  mov   $f2,#$5d
 //0b31: c4 f3     mov   $f3,a             ; DIR = 0x1b00
 BytePattern FalcomSnesScanner::ptnSetDIR(
 	"\xe8\x1b\x8f\x5d\xf2\xc4\xf3"
+	,
+	"x?xxxxx"
+	,
+	7);
+
+//0344: e8 30     mov   a,#$30
+//0346: 8d 5d     mov   y,#$5d
+//0348: 3f a2 0e  call  $0ea2
+BytePattern FalcomSnesScanner::ptnSetDIRPM(
+	"\xe8\x30\x8d\x5d\x3f\xa2\x0e"
 	,
 	"x?xxxxx"
 	,
@@ -69,6 +104,28 @@ BytePattern FalcomSnesScanner::ptnLoadInstr(
 	,
 	23);
 
+//09a7: 5d        mov   x,a
+//09a8: 3f 5a 09  call  $095a
+//09ab: d5 6e 01  mov   $016e+x,a
+//09ae: 8d 06     mov   y,#$06
+//09b0: cf        mul   ya
+//09b1: da 05     movw  $05,ya
+//09b3: 60        clrc
+//09b4: 98 47 05  adc   $05,#$47
+//09b7: 98 0f 06  adc   $06,#$0f
+//09ba: 3f 35 0c  call  $0c35
+//09bd: b0 38     bcs   $09f7
+BytePattern FalcomSnesScanner::ptnLoadInstrPM(
+	"\x5d\x3f\x5a\x09\xd5\x6e\x01\x8d"
+  "\x06\xcf\xda\x05\x60\x98\x47\x05"
+  "\x98\x0f\x06\x3f\x35\x0c\xb0\x38"
+	,
+	"xx??x??x"
+  "?xx?xx??"
+  "x??x??x?"
+	,
+	24);
+
 void FalcomSnesScanner::Scan(RawFile *file, void *info) {
   uint32_t nFileLength = file->size();
   if (nFileLength == 0x10000) {
@@ -82,7 +139,7 @@ void FalcomSnesScanner::Scan(RawFile *file, void *info) {
 
 void FalcomSnesScanner::SearchForFalcomSnesFromARAM(RawFile *file) {
   FalcomSnesVersion version = FALCOMSNES_NONE;
-  std::string name = file->tag.HasTitle() ? file->tag.title : RawFile::removeExtFromPath(file->GetFileName());
+  std::wstring name = file->tag.HasTitle() ? file->tag.title : RawFile::removeExtFromPath(file->GetFileName());
 
   uint32_t ofsLoadSeq;
   uint16_t addrSeqHeader;
@@ -90,6 +147,9 @@ void FalcomSnesScanner::SearchForFalcomSnesFromARAM(RawFile *file) {
     uint8_t addrSeqHeaderPtr = file->GetByte(ofsLoadSeq + 3);
     addrSeqHeader = file->GetShort(addrSeqHeaderPtr);
     version = FALCOMSNES_YS5;
+  } else if (file->SearchBytePattern(ptnLoadSeqPM, ofsLoadSeq)) {
+    addrSeqHeader = file->GetShort(ofsLoadSeq + 1);
+    version = FALCOMSNES_PM;
   }
   else {
     return;
@@ -106,6 +166,8 @@ void FalcomSnesScanner::SearchForFalcomSnesFromARAM(RawFile *file) {
   uint32_t ofsSetDIR;
   if (file->SearchBytePattern(ptnSetDIR, ofsSetDIR)) {
     spcDirAddr = file->GetByte(ofsSetDIR + 1) << 8;
+  } else if (file->SearchBytePattern(ptnSetDIRPM, ofsSetDIR)) {
+    spcDirAddr = file->GetByte(ofsSetDIR + 1) << 8;
   }
   else {
     return;
@@ -118,6 +180,9 @@ void FalcomSnesScanner::SearchForFalcomSnesFromARAM(RawFile *file) {
   if (file->SearchBytePattern(ptnLoadInstr, ofsLoadInstr)) {
     addrSampToInstrTable = file->GetShort(ofsLoadInstr + 3);
     addrInstrTable = file->GetShort(ofsLoadInstr + 21);
+  } else if (file->SearchBytePattern(ptnLoadInstrPM, ofsLoadInstr)) {
+    addrSampToInstrTable = 0;
+    addrInstrTable = file->GetByte(ofsLoadInstr + 14) + (file->GetByte(ofsLoadInstr + 17) * 0x100);
   }
   else {
     return;
