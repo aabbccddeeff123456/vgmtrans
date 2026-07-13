@@ -352,7 +352,7 @@ bool HiroakiYagishitaSnesTrack::ReadEvent(void) {
             tieState = false;
           }
         }
-        AddNoteByDur(beginOffset, curOffset - beginOffset, noteNum, 255, noteDur);
+        AddNoteByDur(beginOffset, curOffset - beginOffset, noteNum, 127, noteDur);
         AddTime(noteDur);
       }
     }
